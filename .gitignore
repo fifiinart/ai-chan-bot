@@ -1,0 +1,5 @@
+node_modules/*
+eng.traineddata
+yarn-error.log
+yarn.lock
+.env
