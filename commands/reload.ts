@@ -1,5 +1,7 @@
 import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder } from "discord.js";
 import { CommandClient } from "..";
+import fs from "fs/promises"
+import path from "path";
 import "dotenv/config"
 
 module.exports = {
@@ -23,6 +25,11 @@ module.exports = {
     }
 
     delete require.cache[require.resolve(`./${command.data.name}.ts`)];
+
+    const utilFiles = await fs.readdir(path.join(__dirname, "..", "util"))
+    for (const file of utilFiles.filter(filename => filename.endsWith('.ts'))) {
+      delete require.cache[require.resolve(path.join(__dirname, "..", "util", file))];
+    }
 
     try {
       const newCommand = require(`./${command.data.name}.ts`);
