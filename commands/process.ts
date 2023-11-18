@@ -2,7 +2,7 @@ import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, Interaction
 import sharp from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, Difficulty, ScorecardFormat, getDifficultyName } from "../util/img-format-constants";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, Difficulty, ScorecardFormat, getDifficultyName, scoreFormat } from "../util/img-format-constants";
 import { createWorker, OEM, PSM } from "tesseract.js";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { getSyncRegion, processScoreImage } from "../util/img-format-constants";
@@ -66,7 +66,7 @@ export async function execute(interaction: CommandInteraction) {
     const score = (await worker.recognize(await composed.toBuffer())).data.text.trim()
 
     let diff: Difficulty, combo: number, version: ScorecardFormat
-    if (diff5 in ["PAST", "PRESENT", "FUTURE", "BEYOND"] && !Number.isNaN(+combo5)) {
+    if ((["PAST", "PRESENT", "FUTURE", "BEYOND"]).includes(diff5) && !Number.isNaN(+combo5) && scoreFormat.test(score)) {
       version = ScorecardFormat.GTE_V5;
       console.log("5.0 Score detected")
       switch (diff5 as ("PAST" | "PRESENT" | "FUTURE" | "BEYOND")) {
@@ -83,7 +83,7 @@ export async function execute(interaction: CommandInteraction) {
           diff = Difficulty.BEYOND;
       }
       combo = +combo5
-    } else if (["Past", "Present", "Future", "Beyond"].some(x => diff4.startsWith(x)) && !Number.isNaN(+combo4)) {
+    } else if (["Past", "Present", "Future", "Beyond"].some(x => diff4.startsWith(x)) && !Number.isNaN(+combo4) && scoreFormat.test(score)) {
       version = ScorecardFormat.LTE_V4;
       console.log("4.0 Score detected")
       if (diff4.startsWith("Past")) diff = Difficulty.PAST;
@@ -92,6 +92,7 @@ export async function execute(interaction: CommandInteraction) {
       diff = Difficulty.BEYOND;
       combo = +combo4
     } else {
+      console.log("Score: %s, Diff: 5 - '%s', 4 - '%s', Combo: 5 - '%d', 4 - '%d'", score, diff5, diff4, +combo5, +combo4)
       return await interaction.followUp(`Unrecognized score format: recieved score "${score}", difficulties "${diff5}", "${diff4}", combos "${combo5}", "${combo4}"`)
     }
 

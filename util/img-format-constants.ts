@@ -8,7 +8,7 @@ export const SYNC_W = 1920;
 export const SYNC_H = 1080;
 export const ASPECT = SYNC_W / SYNC_H;
 
-export const scoreFormat = /^\d{9}$/
+export const scoreFormat = /^[10]\d{7}$/
 
 export enum ScorecardFormat {
   LTE_V4,
