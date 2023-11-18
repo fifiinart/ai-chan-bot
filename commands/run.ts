@@ -1,9 +1,10 @@
-import { SlashCommandBuilder, CommandInteraction, CommandInteractionOptionResolver, Message, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
-import sharp, { Metadata } from "sharp";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
+import sharp from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
 import { OEM, PSM, createWorker } from "tesseract.js";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, ASPECT } from "../util/img-format-constants";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, getSyncRegion } from "../util/img-format-constants";
+import { getAttachmentsFromMessage } from "../util/get-attachments";
 
 export const data = new SlashCommandBuilder()
   .setName('run')
@@ -18,54 +19,15 @@ const imageLinkRegex = /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|svg|PNG|JPG|
 
 export async function execute(interaction: CommandInteraction) {
 
-  const link = (interaction.options as CommandInteractionOptionResolver).getString('image')?.trim()
-  // TODO: find a way to act on an image that the user replies to
-
-  let attachments: string[]
-  if ((link === undefined) || (relativeLinkRegex.test(link))) {
-    const scrapeDist = link ? parseInt(link.substring(1)) : 1
-    const messages = await interaction.channel?.messages.fetch()!
-
-    // i hate myself
-    let message: Message | null = null
-    let counter = 0
-    for (let [, msg] of messages) {
-      if (msg.author.id === interaction.user.id) counter++;
-
-      if (counter === scrapeDist) {
-        message = msg;
-        break;
-      }
-    }
-
-    if (!message) {
-      await interaction.reply("Message not found.")
-      return;
-    }
-
-    console.log(message.id)
-    attachments = [...message.attachments
-      .map(attachment => attachment.url), message.content]
-      .filter(url => imageLinkRegex.test(url));
-    if (attachments.length > 0) message.react('✅');
-
-  } else {
-    const matches = link.match(imageLinkRegex)
-    if (!matches) {
-      await interaction.reply("Invalid image attachment.")
-      return;
-    }
-    attachments = matches
-  }
-
-  if (attachments.length == 0) {
-    await interaction.reply("No attachments found.")
+  const result = await getAttachmentsFromMessage(interaction);
+  if (!result.success) {
+    interaction.reply(result.error);
     return;
   }
 
-  console.log("Attachment found: " + attachments)
-
   await interaction.deferReply();
+
+  const attachments = result.data;
 
   for (const attachment of attachments) {
     const sharpStream = sharp({ failOn: "none" });
@@ -153,27 +115,3 @@ export async function execute(interaction: CommandInteraction) {
 
 }
 
-function getSyncRegion(meta: sharp.Metadata) {
-
-  if (meta.width! > meta.height! * ASPECT) {
-    const newWidth = meta.height! * ASPECT;
-    const diffWidth = meta.width! - newWidth;
-    return {
-      left: Math.floor(diffWidth / 2),
-      width: Math.floor(newWidth),
-      top: 0,
-      height: meta.height!
-    };
-
-  } else {
-    const newHeight = meta.width! / ASPECT;
-    const diffHeight = meta.height! - newHeight;
-    return {
-      top: Math.floor(diffHeight / 2),
-      height: Math.floor(newHeight),
-      left: 0,
-      width: meta.width!
-    };
-  }
-
-}

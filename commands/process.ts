@@ -1,12 +1,11 @@
-import { SlashCommandBuilder, CommandInteraction, CommandInteractionOptionResolver, Message, AttachmentBuilder, InteractionReplyOptions, EmbedType, GuildMember } from "discord.js";
-import sharp, { Metadata } from "sharp";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember } from "discord.js";
+import sharp from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
-import { analyzeLabels, connectedComponents, labelResultsToImg, processFromLabelData, sharpToMatrix } from "../util/connected-components";
 import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, Difficulty, ScorecardFormat, getDifficultyName } from "../util/img-format-constants";
 import { createWorker, OEM, PSM } from "tesseract.js";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
-import { MULT, ASPECT } from "../util/img-format-constants";
+import { getSyncRegion, processScoreImage } from "../util/img-format-constants";
 export const data = new SlashCommandBuilder()
   .setName('process')
   .setDescription('Processes an Arcaea score screenshot.')
@@ -134,51 +133,6 @@ export async function execute(interaction: CommandInteraction) {
     if (!(interaction.replied || interaction.deferred))
       await interaction.reply(replyContent)
     else await interaction.followUp(replyContent)
-  }
-
-}
-
-async function processScoreImage(scoreImg: sharp.Sharp) {
-  scoreImg = sharp(await scoreImg.toBuffer()).resize({ height: Math.floor(SCORE_REGION.height * MULT) }).removeAlpha().threshold(); //.negate()//.threshold()
-  scoreImg = sharp(await scoreImg.toBuffer()).negate();
-  const mat = await sharpToMatrix(scoreImg);
-  const labels = connectedComponents(mat);
-  const colored = labelResultsToImg(labels).png();
-  const dataList = analyzeLabels(labels);
-
-  let composed = processFromLabelData(dataList).png();
-  composed.affine([1, -0.11, 0, 1], { "background": "white" }).extend({
-    background: 'white',
-    top: 4,
-    bottom: 4,
-    left: 4,
-    right: 4
-  }).blur(1.0);
-  composed = sharp(await composed.toBuffer()).threshold(255 - 50).png();
-  return { composed, colored, scoreImg };
-}
-
-function getSyncRegion(meta: sharp.Metadata) {
-
-  if (meta.width! > meta.height! * ASPECT) {
-    const newWidth = meta.height! * ASPECT;
-    const diffWidth = meta.width! - newWidth;
-    return {
-      left: Math.floor(diffWidth / 2),
-      width: Math.floor(newWidth),
-      top: 0,
-      height: meta.height!
-    };
-
-  } else {
-    const newHeight = meta.width! / ASPECT;
-    const diffHeight = meta.height! - newHeight;
-    return {
-      top: Math.floor(diffHeight / 2),
-      height: Math.floor(newHeight),
-      left: 0,
-      width: meta.width!
-    };
   }
 
 }
