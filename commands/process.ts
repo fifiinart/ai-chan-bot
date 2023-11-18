@@ -29,6 +29,9 @@ export async function execute(interaction: CommandInteraction) {
   const attachments = result.data;
 
   for (const attachment of attachments) {
+
+    const startTime = new Date()
+
     const sharpStream = sharp({ failOn: "none" });
 
     (await axios.get<Stream>(attachment, { responseType: "stream" })).data.pipe(sharpStream);
@@ -96,10 +99,13 @@ export async function execute(interaction: CommandInteraction) {
 
     console.log(interaction.member instanceof GuildMember ? interaction.member.displayAvatarURL() : undefined)
 
+    const endTime = new Date()
+    const seconds = (endTime.getTime() - startTime.getTime()) / 1000
+
     const replyContent: InteractionReplyOptions = {
       files: await Promise.all(files.map(async x => new AttachmentBuilder(await x.toBuffer(), { name: "cropped.png" }))),
       embeds: [{
-        "title": `Score Processing Result`,
+        "title": `Score Processing Result (${seconds}s)`,
         "description": "",
         "color": 0xe8aeff,
         "fields": [
