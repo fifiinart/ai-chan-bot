@@ -4,6 +4,13 @@ import { Stream } from "stream";
 import { createWorker, OEM, PSM } from "tesseract.js";
 import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat } from "./img-format-constants";
 
+export interface Score {
+  version: ScorecardFormat;
+  score: number;
+  difficulty: Difficulty;
+  combo: number;
+}
+
 export interface ScorecardProcessSuccess {
   success: true,
   data: {
@@ -18,12 +25,7 @@ export interface ScorecardProcessSuccess {
       difficulty: Buffer,
       combo: Buffer
     },
-    data: {
-      version: ScorecardFormat
-      score: number,
-      difficulty: Difficulty,
-      combo: number
-    }
+    data: Score
   }
   time: {
     start: Date,
