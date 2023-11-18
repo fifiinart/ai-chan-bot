@@ -26,7 +26,7 @@ export async function execute(interaction: CommandInteraction) {
     const processResult = await processScorecard(attachment);
 
     if (!processResult.success) {
-      return await interaction.reply(processResult.error);
+      return await interaction.followUp(processResult.error);
     }
 
     const { interval } = processResult.time
