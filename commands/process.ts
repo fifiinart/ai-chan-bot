@@ -3,9 +3,10 @@ import sharp, { Metadata } from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
 import { analyzeLabels, connectedComponents, labelResultsToImg, processFromLabelData, sharpToMatrix } from "../util/connected-components";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION, COMBO_REGION, MULT, ASPECT } from "../util/img-format-constants";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, Difficulty, ScorecardFormat } from "../util/img-format-constants";
 import { createWorker, OEM, PSM } from "tesseract.js";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
+import { MULT, ASPECT } from "../util/img-format-constants";
 export const data = new SlashCommandBuilder()
   .setName('process')
   .setDescription('Processes an Arcaea score screenshot.')
@@ -37,12 +38,11 @@ export async function execute(interaction: CommandInteraction) {
 
     sharpStream.extract(getSyncRegion(meta)).resize(SYNC_W, SYNC_H)
 
-    let [jacket, scoreImg, diffImg, comboImg] = [JACKET_REGION, SCORE_REGION, DIFF_REGION, COMBO_REGION]
+    let [jacket, scoreImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
       .map((region) => sharpStream.clone().extract(region).png())
 
     let composed;
-    let colored;
-    ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));
+    ({ composed, scoreImg } = await processScoreImage(scoreImg));
 
     const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
       // @ts-ignore
@@ -50,8 +50,10 @@ export async function execute(interaction: CommandInteraction) {
       load_freq_dawg: '0',
     })
 
-    const diff = await worker.recognize(await diffImg.toBuffer())
-    const combo = await worker.recognize(await comboImg.toBuffer())
+    const diff5 = (await worker.recognize(await diff5Img.toBuffer())).data.text.trim()
+    const combo5 = (await worker.recognize(await combo5Img.toBuffer())).data.text.trim()
+    const diff4 = (await worker.recognize(await diff4Img.toBuffer())).data.text.trim()
+    const combo4 = (await worker.recognize(await combo4Img.toBuffer())).data.text.trim()
 
 
     console.log(await worker.setParameters({
@@ -59,9 +61,39 @@ export async function execute(interaction: CommandInteraction) {
       tessedit_pageseg_mode: PSM.SINGLE_WORD
     }))
 
-    const score = await worker.recognize(await composed.toBuffer())
+    const score = (await worker.recognize(await composed.toBuffer())).data.text.trim()
 
-    const files = [jacket, scoreImg, colored, composed]
+    let diff: Difficulty, combo: number, version: ScorecardFormat
+    if (diff5 in ["PAST", "PRESENT", "FUTURE", "BEYOND"] && !Number.isNaN(+combo5)) {
+      version = ScorecardFormat.GTE_V5;
+      console.log("5.0 Score detected")
+      switch (diff5 as ("PAST" | "PRESENT" | "FUTURE" | "BEYOND")) {
+        case "PAST":
+          diff = Difficulty.PAST;
+          break;
+        case "PRESENT":
+          diff = Difficulty.PRESENT;
+          break;
+        case "FUTURE":
+          diff = Difficulty.FUTURE;
+          break;
+        case "BEYOND":
+          diff = Difficulty.BEYOND;
+      }
+      combo = +combo5
+    } else if (["Past", "Present", "Future", "Beyond"].some(x => diff4.startsWith(x)) && !Number.isNaN(+combo4)) {
+      version = ScorecardFormat.LTE_V4;
+      console.log("4.0 Score detected")
+      if (diff4.startsWith("Past")) diff = Difficulty.PAST;
+      if (diff4.startsWith("Present")) diff = Difficulty.PRESENT;
+      if (diff4.startsWith("Future")) diff = Difficulty.FUTURE;
+      diff = Difficulty.BEYOND;
+      combo = +combo4
+    } else {
+      return await interaction.followUp(`Unrecognized score format: recieved score "${score}", difficulties "${diff5}", "${diff4}", combos "${combo5}", "${combo4}"`)
+    }
+
+    const files = [sharpStream, jacket, scoreImg, composed, version === ScorecardFormat.GTE_V5 ? diff5Img : diff4Img, version === ScorecardFormat.GTE_V5 ? combo5Img : combo4Img]
 
     console.log(interaction.member instanceof GuildMember ? interaction.member.displayAvatarURL() : undefined)
 
@@ -74,17 +106,17 @@ export async function execute(interaction: CommandInteraction) {
         "fields": [
           {
             "name": `Score`,
-            "value": `${score.data.text.trim()}`,
+            "value": `${score}`,
             "inline": true
           },
           {
             "name": `Difficulty`,
-            "value": `${diff.data.text.trim()}`,
+            "value": `${diff}`,
             "inline": true
           },
           {
             "name": `Combo`,
-            "value": `${combo.data.text.trim()}`,
+            "value": `${combo}`,
             "inline": true
           }
         ],

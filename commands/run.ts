@@ -3,7 +3,7 @@ import sharp, { Metadata } from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
 import { OEM, PSM, createWorker } from "tesseract.js";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION, COMBO_REGION, MULT, ASPECT } from "../util/img-format-constants";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, ASPECT } from "../util/img-format-constants";
 
 export const data = new SlashCommandBuilder()
   .setName('run')
@@ -76,7 +76,7 @@ export async function execute(interaction: CommandInteraction) {
 
     sharpStream.extract(getSyncRegion(meta)).resize(SYNC_W, SYNC_H)
 
-    let [jacket, scoreImg, diffImg, comboImg] = [JACKET_REGION, SCORE_REGION, DIFF_REGION, COMBO_REGION]
+    let [jacket, scoreImg, diffImg, comboImg] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5]
       .map((region) => sharpStream.clone().extract(region).png())
 
     scoreImg = sharp(await scoreImg.toBuffer()).resize({ height: Math.floor(SCORE_REGION.height * MULT) }).removeAlpha().threshold(128)
