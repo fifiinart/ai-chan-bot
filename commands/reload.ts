@@ -28,7 +28,9 @@ module.exports = {
 
     const utilFiles = await fs.readdir(path.join(__dirname, "..", "util"))
     for (const file of utilFiles.filter(filename => filename.endsWith('.ts'))) {
-      delete require.cache[require.resolve(path.join(__dirname, "..", "util", file))];
+      delete require.cache[require.resolve(`../util/${file}`)];
+      require(`../util/${file}`)
+      console.log(`${file} uncached`)
     }
 
     try {
