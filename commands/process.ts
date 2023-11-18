@@ -3,7 +3,7 @@ import sharp, { Metadata } from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
 import { analyzeLabels, connectedComponents, labelResultsToImg, processFromLabelData, sharpToMatrix } from "../util/connected-components";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, Difficulty, ScorecardFormat } from "../util/img-format-constants";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, Difficulty, ScorecardFormat, getDifficultyName } from "../util/img-format-constants";
 import { createWorker, OEM, PSM } from "tesseract.js";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { MULT, ASPECT } from "../util/img-format-constants";
@@ -111,7 +111,7 @@ export async function execute(interaction: CommandInteraction) {
           },
           {
             "name": `Difficulty`,
-            "value": `${diff}`,
+            "value": `${getDifficultyName(diff)}`,
             "inline": true
           },
           {
