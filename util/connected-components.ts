@@ -77,7 +77,6 @@ export function connectedComponents(matrix: number[][]) {
 
   const labelSet = [...new Set(labels.flat())].sort((a, b) => a - b);
   const sortedLabelMap = new Map(labelSet.map((label, i) => [label, i]))
-  console.log(sortedLabelMap)
 
   for (let y = 0; y < matrix.length; y++) {
     for (let x = 0; x < matrix[0].length; x++) {
