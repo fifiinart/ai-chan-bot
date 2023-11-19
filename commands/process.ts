@@ -12,11 +12,14 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
 
+  let now = Date.now();
+
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
     return await interaction.reply(result.error);
   }
 
+  console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
   await interaction.deferReply();
 
   const attachments = result.data;
