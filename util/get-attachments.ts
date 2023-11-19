@@ -13,7 +13,7 @@ export interface RetrieveAttachmentFailure {
 export type RetrieveAttachmentResponse = RetrieveAttachmentSuccess | RetrieveAttachmentFailure
 
 const relativeLinkRegex = /^[mM](\d+)$/
-const imageLinkRegex = /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|svg|PNG|JPG|JPEG|GIF|SVG))/g
+const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S(?:png|jpg|jpeg|gif|svg))/gi
 
 export async function getAttachmentsFromMessage(interaction: CommandInteraction): Promise<RetrieveAttachmentResponse> {
   const link = (interaction.options as CommandInteractionOptionResolver).getString('image')?.trim()
@@ -40,10 +40,7 @@ export async function getAttachmentsFromMessage(interaction: CommandInteraction)
       return { success: false, error: "Message not found." }
     }
 
-    console.log(message.id)
-    attachments = [...message.attachments
-      .map(attachment => attachment.url), message.content]
-      .filter(url => imageLinkRegex.test(url));
+    attachments = [...message.attachments.mapValues(x => x.url).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
     if (attachments.length > 0) message.react('✅');
 
   } else {
@@ -58,6 +55,6 @@ export async function getAttachmentsFromMessage(interaction: CommandInteraction)
     return { success: false, error: "No attachments found." }
   }
 
-  console.log("Attachment found: " + attachments)
+  console.log("Attachments found: " + attachments.length)
   return { success: true, data: attachments }
 }
