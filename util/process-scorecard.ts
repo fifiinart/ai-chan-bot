@@ -1,7 +1,7 @@
 import axios from "axios";
 import sharp from "sharp";
 import { Stream } from "stream";
-import { createWorker, OEM, PSM } from "tesseract.js";
+import { createWorker, createScheduler, OEM, PSM } from "tesseract.js";
 import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat } from "./img-format-constants";
 
 export interface Score {
@@ -46,6 +46,9 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
 
   (await axios.get<Stream>(imgUrl, { responseType: "stream" })).data.pipe(sh_scorecard);
 
+  console.log("Get score image: %ds", -(startTime.getTime() - Date.now()) / 1000)
+  let now = Date.now()
+
   const meta = await sh_scorecard.metadata()
 
   sh_scorecard.extract(getSyncRegion(meta)).resize(SYNC_W, SYNC_H)
@@ -53,27 +56,58 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   let [jacket, scoreImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
     .map((region) => sh_scorecard.clone().extract(region).png())
 
-  let composed, colored;
+  let composed: sharp.Sharp, colored;
   ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));
+  console.log("Extract and process image: %ds", -(now - Date.now()) / 1000)
+  now = Date.now()
 
-  const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
-    // @ts-ignore
-    load_system_dawg: '0',
-    load_freq_dawg: '0',
-  })
-
-  const diff5 = (await worker.recognize(await diff5Img.toBuffer())).data.text.trim()
-  const combo5 = (await worker.recognize(await combo5Img.toBuffer())).data.text.trim()
-  const diff4 = (await worker.recognize(await diff4Img.toBuffer())).data.text.trim()
-  const combo4 = (await worker.recognize(await combo4Img.toBuffer())).data.text.trim()
-
-
-  console.log(await worker.setParameters({
-    tessedit_char_whitelist: "0123456789",
-    tessedit_pageseg_mode: PSM.SINGLE_WORD
+  const scheduler = createScheduler()
+  const workerN = 2;
+  await Promise.all(Array(workerN).fill(0).map(async (_, i) => {
+    const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
+      // @ts-ignore
+      load_system_dawg: '0',
+      load_freq_dawg: '0',
+    })
+    scheduler.addWorker(worker)
   }))
 
-  const score = (await worker.recognize(await composed.toBuffer())).data.text.trim()
+  const sharpToText = async (x: sharp.Sharp, i: number): Promise<string> => {
+    console.log("Start OCR of image ", i)
+    const img = await x.toBuffer();
+    const ocr = await scheduler.addJob('recognize', img)
+    console.log("End OCR of image ", i)
+    return ocr.data.text.trim();
+  };
+
+  const promises = [diff5Img, combo5Img, diff4Img, combo4Img].map(sharpToText)
+
+  const recognizeScore = async () => {
+    const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
+      // @ts-ignore
+      load_system_dawg: '0',
+      load_freq_dawg: '0',
+    })
+
+    await worker.setParameters({
+      tessedit_char_whitelist: "0123456789",
+      tessedit_pageseg_mode: PSM.SINGLE_WORD
+    })
+
+    const score = (await worker.recognize(await composed.toBuffer())).data.text.trim()
+
+    await worker.terminate()
+
+    return score
+  }
+  promises.push(recognizeScore())
+
+  const [diff5, combo5, diff4, combo4, score] = await Promise.all(promises)
+
+  scheduler.terminate()
+
+  console.log("OCR text: %ds", -(now - Date.now()) / 1000)
+  now = Date.now()
 
   let difficulty: Difficulty, combo: number, version: ScorecardFormat
   if ((["PAST", "PRESENT", "FUTURE", "BEYOND"]).includes(diff5) && !Number.isNaN(+combo5) && scoreFormat.test(score)) {
@@ -111,6 +145,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   }
 
   const endTime = new Date()
+  console.log("Total image processing, %ds", (endTime.getTime() - startTime.getTime()) / 1000)
 
   return {
     success: true,
