@@ -1,5 +1,5 @@
 import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder } from "discord.js";
-import { CommandClient } from "..";
+import { CustomClient } from "..";
 import fs from "fs/promises"
 import path from "path";
 import "dotenv/config"
@@ -17,7 +17,7 @@ module.exports = {
       return await interaction.reply("Only the owner of the bot can reload a command!")
 
     const commandName = (interaction.options as CommandInteractionOptionResolver).getString('command', true).toLowerCase();
-    const commands = (interaction.client as CommandClient).commands!;
+    const commands = (interaction.client as CustomClient).commands!;
     const command = commands.get(commandName);
 
     if (!command) {

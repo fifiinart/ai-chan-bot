@@ -3,3 +3,8 @@ eng.traineddata
 yarn-error.log
 yarn.lock
 .env
+.DS_Store
+testdrive/*
+database.json
+collections/*
+jackets/*

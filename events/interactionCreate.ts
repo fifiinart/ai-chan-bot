@@ -1,12 +1,12 @@
 import { CacheType, Events, Interaction } from "discord.js";
-import type { CommandClient } from "../index"
+import type { CustomClient } from "../index"
 
 export const name = Events.InteractionCreate
 export const once = false;
 export async function execute(interaction: Interaction<CacheType>) {
   if (!interaction.isChatInputCommand()) return;
 
-  const command = (interaction.client as CommandClient).commands?.get(interaction.commandName);
+  const command = (interaction.client as CustomClient).commands?.get(interaction.commandName);
 
   if (!command) {
     console.error(`No command matching ${interaction.commandName} was found.`);

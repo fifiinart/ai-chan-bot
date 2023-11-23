@@ -1,13 +1,20 @@
+
+// Require the necessary discord.js classes
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes } from "discord.js";
+import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
+import { Database } from "simpl.db";
+import { setupDB } from "./util/database";
 
 interface Command {
   data: SlashCommandBuilder
   execute(interaction: CommandInteraction): Promise<void>
 }
 
-export interface CommandClient extends Client {
-  commands?: Collection<string, Command>
+export interface CustomClient extends Client {
+  commands: Collection<string, Command>,
+  db: Database
 }
 
 interface Event<N extends string = string> {
@@ -16,16 +23,16 @@ interface Event<N extends string = string> {
   execute(...args: any): void
 }
 
-// Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Events, Collection, SlashCommandBuilder, CommandInteraction, RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes } from "discord.js";
-import "dotenv/config"
 // Create a new client instance
-const client: CommandClient = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent] });
+const client: CustomClient = Object.assign<Client, Omit<CustomClient, keyof Client>>(
+  new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent] }),
+  {
+    commands: new Collection(),
+    db: setupDB(new Database())
+  });
 
 // Log in to Discord with your client's token
 client.login(process.env.TOKEN);
-
-client.commands = new Collection();
 
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
