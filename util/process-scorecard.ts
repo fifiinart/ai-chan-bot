@@ -2,7 +2,7 @@ import axios from "axios";
 import sharp from "sharp";
 import { Stream } from "stream";
 import { createWorker, createScheduler, OEM, PSM } from "tesseract.js";
-import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat } from "./img-format-constants";
+import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat, JACKET_RESOLUTION } from "./img-format-constants";
 
 export interface Score {
   version: ScorecardFormat;
@@ -39,6 +39,14 @@ export interface ScorecardProcessFailure {
 }
 export type ScorecardProcessResult = ScorecardProcessSuccess | ScorecardProcessFailure
 
+export async function extractJacket(imgUrl: string): Promise<sharp.Sharp> {
+  const sh_scorecard = sharp({ failOn: "none" });
+
+  (await axios.get<Stream>(imgUrl, { responseType: "stream" })).data.pipe(sh_scorecard);
+
+  return sh_scorecard.extract(JACKET_REGION).png()
+}
+
 export async function processScorecard(imgUrl: string): Promise<ScorecardProcessResult> {
   const startTime = new Date()
 
@@ -46,7 +54,6 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
 
   (await axios.get<Stream>(imgUrl, { responseType: "stream" })).data.pipe(sh_scorecard);
 
-  console.log("Get score image: %ds", -(startTime.getTime() - Date.now()) / 1000)
   let now = Date.now()
 
   const meta = await sh_scorecard.metadata()
@@ -55,6 +62,8 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
 
   let [jacket, scoreImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
     .map((region) => sh_scorecard.clone().extract(region).png())
+
+  jacket = sharp(await jacket.toBuffer()).resize(JACKET_RESOLUTION).ensureAlpha().png()
 
   let composed: sharp.Sharp, colored;
   ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));

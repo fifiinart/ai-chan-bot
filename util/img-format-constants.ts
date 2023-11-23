@@ -10,6 +10,8 @@ export const ASPECT = SYNC_W / SYNC_H;
 
 export const scoreFormat = /^[10]\d{7}$/
 
+export const JACKET_RESOLUTION = 128
+
 export enum ScorecardFormat {
   LTE_V4,
   GTE_V5
