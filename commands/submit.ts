@@ -7,7 +7,7 @@ import fs from "fs/promises"
 import path from "path";
 import { CustomClient } from "..";
 import sharp from "sharp";
-import { createUpdateDatabaseEmbed } from "../util/embed";
+import { createErrorEmbed, createUpdateDatabaseEmbed } from "../util/embed";
 export const data = new SlashCommandBuilder()
   .setName('submit')
   .setDescription('Submits an Arcaea jacket with information to the database.')
@@ -55,7 +55,7 @@ export async function execute(interaction: CommandInteraction) {
   const attachments = result.data;
 
   if (attachments.length > 1) {
-    return await interaction.followUp('Multiple images given.')
+    return await interaction.followUp({ embeds: [createErrorEmbed("Multiple images received", interaction)] })
   }
 
   const [attachment] = attachments;
@@ -63,7 +63,7 @@ export async function execute(interaction: CommandInteraction) {
   const processResult = await processScorecard(attachment);
 
   if (!processResult.success) {
-    return await interaction.followUp(processResult.error);
+    return await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, interaction)] });
   }
 
   const { data } = processResult

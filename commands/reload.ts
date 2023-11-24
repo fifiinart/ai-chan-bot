@@ -1,8 +1,9 @@
-import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder } from "discord.js";
+import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, codeBlock, inlineCode } from "discord.js";
 import { CustomClient } from "..";
 import fs from "fs/promises"
 import path from "path";
 import "dotenv/config"
+import { createErrorEmbed, createSuccessEmbed } from "../util/embed";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,7 +22,7 @@ module.exports = {
     const command = commands.get(commandName);
 
     if (!command) {
-      return interaction.reply(`There is no command with name \`${commandName}\`!`);
+      return await interaction.reply({ embeds: [createErrorEmbed(`There is no command with name ${inlineCode(commandName)}!`, interaction)] });
     }
 
     delete require.cache[require.resolve(`./${command.data.name}.ts`)];
@@ -38,13 +39,13 @@ module.exports = {
       if ("data" in newCommand && "execute" in newCommand) {
         commands.delete(command.data.name);
         commands.set(newCommand.data.name, newCommand);
-        await interaction.reply(`Command \`${newCommand.data.name}\` was reloaded!`);
+        return await interaction.reply({ embeds: [createSuccessEmbed("Command Reload", null, interaction).setDescription(`Command \`${newCommand.data.name}\` was reloaded!`)] });
       } else {
-        await interaction.reply(`New command is not valid!`);
+        return await interaction.reply({ embeds: [createErrorEmbed(`New command \`${command.data.name}\` is not valid - no \`data\`/\`execute\` exports found!`, interaction)] });
       }
     } catch (error) {
       console.error(error);
-      await interaction.reply(`There was an error while reloading a command \`${command.data.name}\`:\n\`${error instanceof Error ? error.message : ""}\``);
+      return await interaction.reply({ embeds: [createErrorEmbed(`There was an error while reloading a command \`${command.data.name}\`:\n\`${error instanceof Error ? codeBlock(error.message) : ""}\``, interaction)] });
     }
   },
 };
