@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { Stream } from "stream";
 import { createWorker, createScheduler, OEM, PSM } from "tesseract.js";
 import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat, JACKET_RESOLUTION } from "./img-format-constants";
+import { compareJackets } from "./pixelmatch";
 
 export interface Score {
   version: ScorecardFormat;
@@ -63,7 +64,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   let [jacket, scoreImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
     .map((region) => sh_scorecard.clone().extract(region).png())
 
-  jacket = sharp(await jacket.toBuffer()).resize(JACKET_RESOLUTION).ensureAlpha().png()
+  // jacket = sharp(await jacket.toBuffer()).resize(JACKET_RESOLUTION).ensureAlpha().png()
 
   let composed: sharp.Sharp, colored;
   ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));
@@ -140,9 +141,9 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     version = ScorecardFormat.LTE_V4;
     console.log("4.0 Score detected")
     if (diff4.startsWith("Past")) difficulty = Difficulty.PAST;
-    if (diff4.startsWith("Present")) difficulty = Difficulty.PRESENT;
-    if (diff4.startsWith("Future")) difficulty = Difficulty.FUTURE;
-    difficulty = Difficulty.BEYOND;
+    else if (diff4.startsWith("Present")) difficulty = Difficulty.PRESENT;
+    else if (diff4.startsWith("Future")) difficulty = Difficulty.FUTURE;
+    else difficulty = Difficulty.BEYOND;
     combo = +combo4
   } else {
     console.log("Score: %s, Diff: 5 - '%s', 4 - '%s', Combo: 5 - '%d', 4 - '%d'", score, diff5, diff4, +combo5, +combo4)
