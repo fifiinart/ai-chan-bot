@@ -2,6 +2,7 @@ import sharp from "sharp";
 import {
   analyzeLabels, connectedComponents, labelResultsToImg, processFromLabelData, sharpToMatrix
 } from "../util/connected-components";
+import path from "path";
 
 export const MULT = 1 / 2;
 export const SYNC_W = 1920;
@@ -11,6 +12,10 @@ export const ASPECT = SYNC_W / SYNC_H;
 export const scoreFormat = /^[10]\d{7}$/
 
 export const JACKET_RESOLUTION = 128
+
+export function getJacketPath(id: string) {
+  return path.join(process.cwd(), 'jackets', id + '.png')
+}
 
 export enum ScorecardFormat {
   LTE_V4,
@@ -71,7 +76,7 @@ export async function processScoreImage(scoreImg: sharp.Sharp) {
   const dataList = analyzeLabels(labels);
 
   let composed = processFromLabelData(dataList).png();
-  composed.affine([1, -0.11, 0, 1], { "background": "white" }).extend({
+  composed.affine([1, -0.1, 0, 1], { "background": "white" }).extend({
     background: 'white',
     top: 4,
     bottom: 4,

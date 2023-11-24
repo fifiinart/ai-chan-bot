@@ -1,11 +1,13 @@
 import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember, CommandInteractionOptionResolver } from "discord.js";
-import { Difficulty } from "../util/img-format-constants";
+import { Difficulty, JACKET_RESOLUTION } from "../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { SongData, SongDifficultyData } from "../util/database";
 import fs from "fs/promises"
 import path from "path";
 import { CustomClient } from "..";
+import sharp from "sharp";
+import { createSongDataEmbed } from "../util/embed";
 export const data = new SlashCommandBuilder()
   .setName('submit')
   .setDescription('Submits an Arcaea jacket with information to the database.')
@@ -79,16 +81,19 @@ export async function execute(interaction: CommandInteraction) {
   const difficultyData: SongDifficultyData = { name, artist, charter, cc, notes, difficulty }
 
   const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
-  if (SongData.has(target => target.jacketPath === id)) {
+  if (SongData.has(target => target.id === id)) {
     SongData.update(x => {
       x[key] = difficultyData
-    }, target => target.jacketPath === id)
+    }, target => target.id === id)
   } else {
-    SongData.create({ jacketPath: id, [key]: difficultyData })
+    SongData.create({ id: id, [key]: difficultyData })
   }
 
   const jacketPath = path.join(__dirname, '..', 'jackets', id + '.png')
-  await fs.writeFile(jacketPath, jacket)
+  await fs.writeFile(jacketPath, await sharp(jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer())
 
-  return interaction.followUp("Database updated!")
+  return interaction.followUp({
+    files: [new AttachmentBuilder(jacket, { name: "jacket.png" })],
+    embeds: [createSongDataEmbed(difficultyData, Date.now() - now, interaction).setTitle("Database Update")]
+  })
 }

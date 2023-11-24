@@ -1,7 +1,11 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
 import { getDifficultyName } from "../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
+import { compareJackets } from "../util/pixelmatch";
+import { CustomClient } from "..";
+import sharp from "sharp";
+import { createErrorEmbed, createProcessEmbed, createSongDataEmbed } from "../util/embed";
 export const data = new SlashCommandBuilder()
   .setName('process')
   .setDescription('Processes an Arcaea score screenshot.')
@@ -16,7 +20,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
-    return await interaction.reply(result.error);
+    return await interaction.followUp({ embeds: [createErrorEmbed(result.error, interaction)] })
   }
 
   console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
@@ -29,7 +33,7 @@ export async function execute(interaction: CommandInteraction) {
     const processResult = await processScorecard(attachment);
 
     if (!processResult.success) {
-      return await interaction.followUp(processResult.error);
+      return await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, interaction)] })
     }
 
     const { interval } = processResult.time
@@ -45,41 +49,28 @@ export async function execute(interaction: CommandInteraction) {
       ["difficulty", data.files.difficulty],
     ]
 
+
+    let songEmbed;
+    const startCompareTime = Date.now()
+    const song = await compareJackets((interaction.client as CustomClient).db.getCollection("songdata")!, await sharp(data.files.jacket).raw().toBuffer())
+    if (!song.song) {
+      songEmbed = createErrorEmbed("Song not found.", interaction)
+    }
+    else {
+      const diff = song.song[(["past", "present", "future", "beyond"] as const)[data.data.difficulty]]
+      if (!diff) {
+        songEmbed = createErrorEmbed(`Difficulty ${getDifficultyName(data.data.difficulty)} not found for song \`${song.song.id}\`.`, interaction)
+      } else {
+        songEmbed = createSongDataEmbed(diff, Date.now() - startCompareTime, interaction)
+      }
+    }
+
     const replyContent: InteractionReplyOptions = {
       files: files.map(([name, file]) => new AttachmentBuilder(file, { name: name + '.png' })),
-      embeds: [{
-        "title": `Score Processing Result (${interval / 1000}s)`,
-        "description": "",
-        "color": 0xe8aeff,
-        "fields": [
-          {
-            "name": `Score`,
-            "value": `${score.toString().padStart(8, '0')}`,
-            "inline": true
-          },
-          {
-            "name": `Difficulty`,
-            "value": `${getDifficultyName(difficulty)}`,
-            "inline": true
-          },
-          {
-            "name": `Combo`,
-            "value": `${combo}`,
-            "inline": true
-          }
-        ],
-        "author": {
-          "name": interaction.client.user.username,
-          "icon_url": interaction.client.user.displayAvatarURL()
-        },
-        "footer": {
-          "text": `Requested by ${interaction.member?.user.username}`,
-          "icon_url": interaction.member instanceof GuildMember ? interaction.member.displayAvatarURL() : undefined
-        },
-        "timestamp": new Date().toISOString()
-      }]
+      embeds: [createProcessEmbed(interval, score, difficulty, combo, interaction), songEmbed]
     };
     await interaction.followUp(replyContent)
   }
 
 }
+

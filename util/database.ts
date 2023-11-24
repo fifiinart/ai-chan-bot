@@ -11,7 +11,7 @@ export interface SongDifficultyData {
 }
 
 export interface SongData {
-  jacketPath: string,
+  id: string,
   past?: SongDifficultyData
   present?: SongDifficultyData
   future?: SongDifficultyData
