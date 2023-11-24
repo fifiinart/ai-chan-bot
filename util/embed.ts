@@ -5,7 +5,9 @@ import { SongDifficultyData } from "./database";
 export const SUCCESS_COLOR = 0x4BB543
 export const ERROR_COLOR = 0xF44336
 
-export function ccToLevel(cc: number) {
+export function ccToLevel(songdata: SongDifficultyData) {
+  if (songdata.level) return songdata.level;
+  const { cc } = songdata
   if (cc < 9) {
     return Math.floor(cc).toString()
   } else {
@@ -65,8 +67,8 @@ export function createSongDataEmbed(songdata: SongDifficultyData, interval: numb
       "inline": false
     }, {
       "name": `Difficulty`,
-      "value": `${bold('Level:')} ${getDifficultyName(songdata.difficulty)} ${ccToLevel(songdata.cc)}
-${bold('CC:')} ${songdata.cc}`,
+      "value": `${bold('Level:')} ${getDifficultyName(songdata.difficulty)} ${ccToLevel(songdata)}
+${bold('CC:')} ${songdata.cc.toFixed(1)}`,
       "inline": false
     }, {
       "name": `Extra Info`,
@@ -85,8 +87,8 @@ export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyDa
       "inline": false
     }, {
       "name": `Difficulty`,
-      "value": `${bold('Level:')} ${getDifficultyName(songdata.difficulty)} ${ccToLevel(songdata.cc)}
-${bold('CC:')} ${songdata.cc}`,
+      "value": `${bold('Level:')} ${getDifficultyName(songdata.difficulty)} ${ccToLevel(songdata)}
+${bold('CC:')} ${songdata.cc.toFixed(1)}`,
       "inline": false
     }, {
       "name": `Extra Info`,

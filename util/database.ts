@@ -8,7 +8,8 @@ export interface SongDifficultyData {
   charter: string,
   cc: number,
   difficulty: Difficulty,
-  notes: number
+  notes: number,
+  level?: string
 }
 
 export interface SongData {

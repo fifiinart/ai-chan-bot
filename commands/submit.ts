@@ -7,7 +7,7 @@ import fs from "fs/promises"
 import path from "path";
 import { CustomClient } from "..";
 import sharp from "sharp";
-import { createErrorEmbed, createSuccessEmbed, createUpdateDatabaseEmbed } from "../util/embed";
+import { createErrorEmbed, createUpdateDatabaseEmbed } from "../util/embed";
 import SimplDB from "simpl.db";
 
 const deleteIndexOnCall = (i: number) => (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
@@ -52,6 +52,9 @@ export const data = new SlashCommandBuilder()
     .setName('artist').setDescription('The artist name.'))
   .addStringOption(opt => opt
     .setName('charter').setDescription('The charter name as listed, for that difficulty.'))
+  .addStringOption(opt => opt
+    .setName('level').setDescription('The custom display level (dropdead FTR 8 - CC 9.1, etc.). Leave blank if consistent with CC.').setRequired(false)
+    .setChoices(...['1', '2', '3', '4', '5', '6', '7', '8', '9', '9+', '10', '10+', '11', '11+', '12'].map(x => ({ name: x, value: x }))))
   .addNumberOption(opt => opt
     .setName('cc').setDescription('The chart constant.').setMinValue(0))
   .addIntegerOption(opt => opt
@@ -94,11 +97,12 @@ export async function execute(interaction: CommandInteraction) {
   const name = options.getString('song')!.trim()
   const artist = options.getString('artist')!.trim()
   const charter = options.getString('charter')!.trim()
+  const level = options.getString('level')
   const cc = options.getNumber('cc')!
   const notes = options.getInteger('notes')!
   const difficulty = +options.getString('difficulty')! as Difficulty
 
-  const difficultyData: SongDifficultyData = { name, artist, charter, cc, notes, difficulty, subid: subid ?? undefined }
+  const difficultyData: SongDifficultyData = { name, artist, charter, level: level ?? undefined, cc, notes, difficulty, subid: subid ?? undefined }
 
   const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
 
