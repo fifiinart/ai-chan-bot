@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember, CommandInteractionOptionResolver } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { Difficulty, JACKET_RESOLUTION } from "../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
@@ -7,7 +7,24 @@ import fs from "fs/promises"
 import path from "path";
 import { CustomClient } from "..";
 import sharp from "sharp";
-import { createErrorEmbed, createUpdateDatabaseEmbed } from "../util/embed";
+import { createErrorEmbed, createSuccessEmbed, createUpdateDatabaseEmbed } from "../util/embed";
+import SimplDB from "simpl.db";
+
+const deleteIndexOnCall = (i: number) => (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
+  col.update(() => x.difficulties.splice(i, 1), y => x.id === y.id)
+  console.log("Index deleted: ", i)
+}
+
+const restoreOldDifficultyOnCall = (i: number, d: SongDifficultyData) => (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
+  col.update(() => x.difficulties[i] = d, y => x.id === y.id)
+  console.log("Difficulty restored: ", i)
+}
+
+const deleteEntryOnCall = (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
+  col.remove(y => x.id === y.id)
+  console.log("Entry deleted: ", x.id)
+}
+
 export const data = new SlashCommandBuilder()
   .setName('submit')
   .setDescription('Submits an Arcaea jacket with information to the database.')
@@ -84,24 +101,75 @@ export async function execute(interaction: CommandInteraction) {
   const difficultyData: SongDifficultyData = { name, artist, charter, cc, notes, difficulty, subid: subid ?? undefined }
 
   const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
+
+  let undoMethod: ((x: SongData, col: typeof SongData) => void) | undefined = undefined;
+  let songdata: SongData | undefined = undefined;
+
   if (SongData.has(target => target.id === id)) {
     SongData.update(x => {
-      const i = x.difficulties.findIndex(d => d.difficulty === difficulty && (d.subid ?? "" === subid ?? ""))
+      songdata = x;
+      const i = x.difficulties.findIndex(d => (d.difficulty === difficulty) && ((d.subid ?? "") === (subid ?? "")))
       if (i !== -1) {
+        console.log(i, x.difficulties[i])
+        const old = Object.assign({}, x.difficulties[i])
         x.difficulties[i] = difficultyData;
+        undoMethod = restoreOldDifficultyOnCall(i, old)
       } else {
-        x.difficulties.push(difficultyData)
+        undoMethod = deleteIndexOnCall(x.difficulties.push(difficultyData) - 1)
       }
     }, target => target.id === id)
+    if (!undoMethod || !songdata) return await interaction.followUp({ embeds: [createErrorEmbed("Something went wrong!", interaction)] });
   } else {
-    SongData.create({ id: id, difficulties: [difficultyData] })
+    songdata = SongData.create({ id: id, difficulties: [difficultyData] })
+    undoMethod = deleteEntryOnCall
   }
 
   const jacketPath = path.join(__dirname, '..', 'jackets', id + (subid ? "-" + subid : "") + '.png')
+  let oldJacket: Buffer | undefined = undefined;
+  try {
+    oldJacket = await fs.readFile(jacketPath)
+  } catch (e) {
+  }
+
   await fs.writeFile(jacketPath, await sharp(jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer())
 
-  return interaction.followUp({
+  console.log(undoMethod, songdata)
+
+  const undoBtnComp = new ButtonBuilder()
+    .setCustomId("undo")
+    .setLabel("Undo")
+    .setStyle(ButtonStyle.Danger)
+    .setEmoji("✖")
+
+  const row = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents([undoBtnComp])
+
+  const response = await interaction.followUp({
     files: [new AttachmentBuilder(jacket, { name: "jacket.png" })],
-    embeds: [createUpdateDatabaseEmbed(id, difficultyData, Date.now() - now, interaction)]
+    embeds: [createUpdateDatabaseEmbed(id, difficultyData, Date.now() - now, interaction)],
+    components: [row]
   })
+
+  const collectorFilter = (i: { user: { id: string; }; }) => i.user.id === interaction.user.id;
+
+  try {
+    const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+
+    if (confirmation.customId = "undo") {
+      undoMethod(songdata, SongData)
+      if (oldJacket) {
+        await fs.writeFile(jacketPath, oldJacket)
+      } else {
+        await fs.rm(jacketPath)
+      }
+      confirmation.update({
+        embeds: [createErrorEmbed("Database Restored", interaction)],
+        files: [],
+        components: []
+      })
+    }
+  } catch (e) {
+    undoBtnComp.setDisabled(true);
+  }
+
 }
