@@ -42,11 +42,7 @@ export async function execute(interaction: CommandInteraction) {
 
     const files: [string, Buffer][] = [
       ["scorecard", data.files.scorecard],
-      ["jacket", data.files.jacket],
-      ["score-raw", data.files.score.raw],
-      ["score-processed", data.files.score.processed],
-      ["combo", data.files.combo],
-      ["difficulty", data.files.difficulty],
+      ["jacket", data.files.jacket]
     ]
 
 
