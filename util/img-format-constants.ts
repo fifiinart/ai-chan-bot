@@ -102,8 +102,8 @@ export function getSyncRegion(meta: sharp.Metadata) {
     const newHeight = meta.width! / ASPECT;
     const diffHeight = meta.height! - newHeight;
     return {
-      top: Math.floor(diffHeight / 2),
-      height: Math.floor(newHeight),
+      top: Math.ceil(diffHeight / 2),
+      height: Math.ceil(newHeight),
       left: 0,
       width: meta.width!
     };

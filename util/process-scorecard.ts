@@ -59,7 +59,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
 
   const meta = await sh_scorecard.metadata()
 
-  sh_scorecard.extract(getSyncRegion(meta)).resize(SYNC_W, SYNC_H)
+  sh_scorecard.extract(getSyncRegion(meta)).resize(SYNC_W, SYNC_H, { kernel: "nearest" })
 
   let [jacket, scoreImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
     .map((region) => sh_scorecard.clone().extract(region).png())
