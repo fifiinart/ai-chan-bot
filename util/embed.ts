@@ -36,7 +36,7 @@ export function createErrorEmbed(error: string, interaction: CommandInteraction)
 export function createSuccessEmbed(title: string, interval: number | null, interaction: CommandInteraction) {
   return createGenericEmbed(interaction)
     .setTitle(title + (interval === null ? "" : ` (${interval / 1000}s)`))
-    .setColor(ERROR_COLOR)
+    .setColor(SUCCESS_COLOR)
 }
 
 export function createProcessEmbed(interval: number, score: number, difficulty: Difficulty, combo: number, interaction: CommandInteraction) {
@@ -62,6 +62,26 @@ export function createSongDataEmbed(songdata: SongDifficultyData, interval: numb
     .addFields({
       "name": `Song`,
       "value": songdata.name,
+      "inline": false
+    }, {
+      "name": `Difficulty`,
+      "value": `${bold('Level:')} ${getDifficultyName(songdata.difficulty)} ${ccToLevel(songdata.cc)}
+${bold('CC:')} ${songdata.cc}`,
+      "inline": false
+    }, {
+      "name": `Extra Info`,
+      "value": `${bold('Artist:')} ${songdata.artist}
+${bold('Charter:')} ${songdata.charter}
+${bold('# Notes:')} ${songdata.notes}`,
+      "inline": false
+    }).setThumbnail("attachment://jacket.png")
+}
+
+export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, interval: number, interaction: CommandInteraction) {
+  return createSuccessEmbed("Update Database", interval, interaction)
+    .addFields({
+      "name": `Song`,
+      "value": `${songdata.name} (\`${id}\`)`,
       "inline": false
     }, {
       "name": `Difficulty`,

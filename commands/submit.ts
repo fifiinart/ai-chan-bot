@@ -7,7 +7,7 @@ import fs from "fs/promises"
 import path from "path";
 import { CustomClient } from "..";
 import sharp from "sharp";
-import { createSongDataEmbed } from "../util/embed";
+import { createUpdateDatabaseEmbed } from "../util/embed";
 export const data = new SlashCommandBuilder()
   .setName('submit')
   .setDescription('Submits an Arcaea jacket with information to the database.')
@@ -94,6 +94,6 @@ export async function execute(interaction: CommandInteraction) {
 
   return interaction.followUp({
     files: [new AttachmentBuilder(jacket, { name: "jacket.png" })],
-    embeds: [createSongDataEmbed(difficultyData, Date.now() - now, interaction).setTitle("Database Update")]
+    embeds: [createUpdateDatabaseEmbed(id, difficultyData, Date.now() - now, interaction)]
   })
 }
