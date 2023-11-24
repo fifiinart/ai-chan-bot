@@ -17,7 +17,10 @@ export const data = new SlashCommandBuilder()
     .setRequired(false))
   .addStringOption(opt => opt
     .setName("id")
-    .setDescription("The id of the jacket to add/overwrite the record."))
+    .setDescription("The id of the song to add/overwrite the record."))
+  .addStringOption(opt => opt
+    .setName("subid")
+    .setDescription("The subid of the jacket to add/overwrite the record. For songs with special jacket variants only."))
   .addStringOption(opt => opt
     .setName('difficulty')
     .setDescription('The difficulty of the submitted score.')
@@ -70,26 +73,31 @@ export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as CommandInteractionOptionResolver
 
   const id = options.getString('id')!.trim()
+  const subid = options.getString('subid')?.trim()
   const name = options.getString('song')!.trim()
   const artist = options.getString('artist')!.trim()
   const charter = options.getString('charter')!.trim()
   const cc = options.getNumber('cc')!
   const notes = options.getInteger('notes')!
   const difficulty = +options.getString('difficulty')! as Difficulty
-  const key: keyof SongData = (["past", "present", "future", "beyond"] as const)[difficulty]
 
-  const difficultyData: SongDifficultyData = { name, artist, charter, cc, notes, difficulty }
+  const difficultyData: SongDifficultyData = { name, artist, charter, cc, notes, difficulty, subid: subid ?? undefined }
 
   const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
   if (SongData.has(target => target.id === id)) {
     SongData.update(x => {
-      x[key] = difficultyData
+      const i = x.difficulties.findIndex(d => d.difficulty === difficulty && (d.subid ?? "" === subid ?? ""))
+      if (i !== -1) {
+        x.difficulties[i] = difficultyData;
+      } else {
+        x.difficulties.push(difficultyData)
+      }
     }, target => target.id === id)
   } else {
-    SongData.create({ id: id, [key]: difficultyData })
+    SongData.create({ id: id, difficulties: [difficultyData] })
   }
 
-  const jacketPath = path.join(__dirname, '..', 'jackets', id + '.png')
+  const jacketPath = path.join(__dirname, '..', 'jackets', id + (subid ? "-" + subid : "") + '.png')
   await fs.writeFile(jacketPath, await sharp(jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer())
 
   return interaction.followUp({

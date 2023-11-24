@@ -20,7 +20,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
-    return await interaction.followUp({ embeds: [createErrorEmbed(result.error, interaction)] })
+    return await interaction.reply({ embeds: [createErrorEmbed(result.error, interaction)] })
   }
 
   console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
@@ -48,17 +48,12 @@ export async function execute(interaction: CommandInteraction) {
 
     let songEmbed;
     const startCompareTime = Date.now()
-    const song = await compareJackets((interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
+    const song = await compareJackets(difficulty, (interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
     if (!song.song) {
       songEmbed = createErrorEmbed("Song not found.", interaction)
     }
     else {
-      const diff = song.song[(["past", "present", "future", "beyond"] as const)[data.data.difficulty]]
-      if (!diff) {
-        songEmbed = createErrorEmbed(`Difficulty ${getDifficultyName(data.data.difficulty)} not found for song \`${song.song.id}\`.`, interaction)
-      } else {
-        songEmbed = createSongDataEmbed(diff, Date.now() - startCompareTime, interaction)
-      }
+      songEmbed = createSongDataEmbed(song.song, Date.now() - startCompareTime, interaction)
     }
 
     const replyContent: InteractionReplyOptions = {

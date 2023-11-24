@@ -28,7 +28,7 @@ const client: CustomClient = Object.assign<Client, Omit<CustomClient, keyof Clie
   new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent] }),
   {
     commands: new Collection(),
-    db: setupDB(new Database({ tabSize: 4 }))
+    db: setupDB(new Database({ tabSize: 2 }))
   });
 
 // Log in to Discord with your client's token
