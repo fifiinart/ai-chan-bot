@@ -3,7 +3,7 @@ import sharp from "sharp";
 import { Stream } from "stream";
 import { createWorker, createScheduler, OEM, PSM } from "tesseract.js";
 import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat, JACKET_RESOLUTION } from "./img-format-constants";
-import { compareJackets } from "./pixelmatch";
+import { codeBlock, inlineCode } from "discord.js";
 
 export interface Score {
   version: ScorecardFormat;
@@ -82,7 +82,22 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     scheduler.addWorker(worker)
   }))
 
-  const sharpToText = async (x: sharp.Sharp, i: number): Promise<string> => {
+  const digitScheduler = createScheduler()
+  const workerDigitN = 2;
+  await Promise.all(Array(workerDigitN).fill(0).map(async (_, i) => {
+    const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
+      // @ts-ignore
+      load_system_dawg: '0',
+      load_freq_dawg: '0',
+    })
+    await worker.setParameters({
+      tessedit_char_whitelist: "0123456789",
+      tessedit_pageseg_mode: PSM.SINGLE_WORD
+    })
+    digitScheduler.addWorker(worker)
+  }))
+
+  const sharpToText = async (x: sharp.Sharp, i: number, scheduler: Tesseract.Scheduler): Promise<string> => {
     console.log("Start OCR of image ", i)
     const img = await x.toBuffer();
     const ocr = await scheduler.addJob('recognize', img)
@@ -90,29 +105,9 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     return ocr.data.text.trim();
   };
 
-  const promises = [diff5Img, combo5Img, diff4Img, combo4Img].map(sharpToText)
+  const promises = [...[diff5Img, diff4Img].map((x, i) => sharpToText(x, i, scheduler)), ...[combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))]
 
-  const recognizeScore = async () => {
-    const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
-      // @ts-ignore
-      load_system_dawg: '0',
-      load_freq_dawg: '0',
-    })
-
-    await worker.setParameters({
-      tessedit_char_whitelist: "0123456789",
-      tessedit_pageseg_mode: PSM.SINGLE_WORD
-    })
-
-    const score = (await worker.recognize(await composed.toBuffer())).data.text.trim()
-
-    await worker.terminate()
-
-    return score
-  }
-  promises.push(recognizeScore())
-
-  const [diff5, combo5, diff4, combo4, score] = await Promise.all(promises)
+  const [diff5, diff4, combo4, combo5, score] = await Promise.all(promises)
 
   scheduler.terminate()
 
@@ -150,7 +145,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     // return await interaction.followUp(`Unrecognized score format: recieved score "${score}", difficulties "${diff5}", "${diff4}", combos "${combo5}", "${combo4}"`)
     return {
       success: false,
-      error: `Unrecognized score format: recieved score "${score}", difficulties "${diff5}", "${diff4}", combos "${combo5}", "${combo4}"`
+      error: `Unrecognized score format: recieved score ${inlineCode(score)}, difficulties "${inlineCode(diff5)}", "${inlineCode(diff4)}", combos "${inlineCode(combo5)}", "${inlineCode(combo4)}"`
     }
   }
 
