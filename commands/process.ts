@@ -52,7 +52,7 @@ export async function execute(interaction: CommandInteraction) {
 
     let songEmbed;
     const startCompareTime = Date.now()
-    const song = await compareJackets((interaction.client as CustomClient).db.getCollection("songdata")!, await sharp(data.files.jacket).raw().toBuffer())
+    const song = await compareJackets((interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
     if (!song.song) {
       songEmbed = createErrorEmbed("Song not found.", interaction)
     }

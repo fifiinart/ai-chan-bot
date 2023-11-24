@@ -10,7 +10,7 @@ export interface CompareJacketsResult {
 }
 
 export async function compareJackets(songdata: SimplDB.Collection<SimplDB.Readable<SongData>>, jacket: Buffer): Promise<CompareJacketsResult> {
-  const downsized = await sharp(await jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer()
+  const downsized = await sharp(await jacket).resize(JACKET_RESOLUTION).ensureAlpha().raw().toBuffer()
   const time = Date.now();
 
   let minDiff = Infinity;
