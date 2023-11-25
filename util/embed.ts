@@ -1,6 +1,6 @@
 import { APIEmbed, CommandInteraction, EmbedBuilder, GuildMember, bold } from "discord.js";
 import { Difficulty, getDifficultyName } from "./img-format-constants";
-import { SongDifficultyData } from "./database";
+import { SongDifficultyData, SongExtraData } from "./database";
 
 export const SUCCESS_COLOR = 0x4BB543
 export const ERROR_COLOR = 0xF44336
@@ -59,11 +59,12 @@ export function createProcessEmbed(interval: number, score: number, difficulty: 
     .setImage("attachment://scorecard.png")
 }
 
-export function createSongDataEmbed(songdata: SongDifficultyData, interval: number, interaction: CommandInteraction) {
+export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number, interaction: CommandInteraction) {
   return createSuccessEmbed("Song Data", interval, interaction)
     .addFields({
       "name": `Song`,
-      "value": songdata.name,
+      "value": `${songdata.name}
+${bold('Pack:')} ${extra.pack.base} ${extra.pack.subpack ? "| " + extra.pack.subpack : ""}`,
       "inline": false
     }, {
       "name": `Difficulty`,
@@ -79,11 +80,12 @@ ${bold('# Notes:')} ${songdata.notes}`,
     }).setThumbnail("attachment://jacket.png")
 }
 
-export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, interval: number, interaction: CommandInteraction) {
+export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number, interaction: CommandInteraction) {
   return createSuccessEmbed("Update Database", interval, interaction)
     .addFields({
       "name": `Song`,
-      "value": `${songdata.name} (\`${id}\`)`,
+      "value": `${songdata.name} (\`${id}\`)
+${bold('Pack:')} ${extra.pack.base} ${extra.pack.subpack ? "| " + extra.pack.subpack : ""}`,
       "inline": false
     }, {
       "name": `Difficulty`,

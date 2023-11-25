@@ -1,31 +1,39 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Difficulty, JACKET_RESOLUTION } from "../util/img-format-constants";
-import { getAttachmentsFromMessage } from "../util/get-attachments";
-import { processScorecard } from "../util/process-scorecard";
-import { SongData, SongDifficultyData } from "../util/database";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder } from "discord.js";
+import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
+import { getAttachmentsFromMessage } from "../../util/get-attachments";
+import { processScorecard } from "../../util/process-scorecard";
+import { SongData, SongDifficultyData, SongExtraData } from "../../util/database";
 import fs from "fs/promises"
 import path from "path";
-import { CustomClient } from "..";
+import { CustomClient } from "../..";
 import sharp from "sharp";
-import { createErrorEmbed, createUpdateDatabaseEmbed } from "../util/embed";
+import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
 import SimplDB from "simpl.db";
 
-const deleteIndexOnCall = (i: number) => (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
-  col.update(() => x.difficulties.splice(i, 1), y => x.id === y.id)
+type UndoMethod = (songdata: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => void;
+const deleteIndexOnCall = (i: number, oldExtra: SongExtraData): UndoMethod => (songdata, col) => {
+  col.update(() => {
+    songdata.extra = oldExtra
+    songdata.difficulties.splice(i, 1)
+  }, target => songdata.id === target.id)
   console.log("Index deleted: ", i)
 }
 
-const restoreOldDifficultyOnCall = (i: number, d: SongDifficultyData) => (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
-  col.update(() => x.difficulties[i] = d, y => x.id === y.id)
+const restoreOldDifficultyOnCall = (i: number, oldDiff: SongDifficultyData, oldExtra: SongExtraData): UndoMethod => (songdata, col) => {
+  col.update(() => {
+    songdata.extra = oldExtra
+    songdata.difficulties[i] = oldDiff
+  }, target => songdata.id === target.id
+  )
   console.log("Difficulty restored: ", i)
 }
 
-const deleteEntryOnCall = (x: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => {
-  col.remove(y => x.id === y.id)
-  console.log("Entry deleted: ", x.id)
+const deleteEntryOnCall: UndoMethod = (songdata, col) => {
+  col.remove(target => songdata.id === target.id)
+  console.log("Entry deleted: ", songdata.id)
 }
 
-export const data = new SlashCommandBuilder()
+export const data = new SlashCommandSubcommandBuilder()
   .setName('submit')
   .setDescription('Submits an Arcaea jacket with information to the database.')
   .addStringOption(opt => opt
@@ -59,14 +67,21 @@ export const data = new SlashCommandBuilder()
     .setName('cc').setDescription('The chart constant.').setMinValue(0))
   .addIntegerOption(opt => opt
     .setName('notes').setDescription('The number of notes for that chart.').setMinValue(0))
+  .addStringOption(opt => opt
+    .setName('pack').setDescription('The pack name. (e.g. World Extend, Eternal Core, Lanota Collaboration)'))
+  .addStringOption(opt => opt
+    .setName('subpack')
+    .setDescription('The sub-pack name. (e.g. "Shifting Veil", (Collaboration) "Chapter 2") Leave blank if doesn\'t apply.')
+    .setRequired(false))
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: CommandInteraction): Promise<void> {
 
   let now = Date.now();
 
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
-    return await interaction.reply(result.error);
+    await interaction.reply(result.error);
+    return;
   }
 
   console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
@@ -75,7 +90,8 @@ export async function execute(interaction: CommandInteraction) {
   const attachments = result.data;
 
   if (attachments.length > 1) {
-    return await interaction.followUp({ embeds: [createErrorEmbed("Multiple images received", interaction)] })
+    await interaction.followUp({ embeds: [createErrorEmbed("Multiple images received", interaction)] })
+    return;
   }
 
   const [attachment] = attachments;
@@ -83,7 +99,8 @@ export async function execute(interaction: CommandInteraction) {
   const processResult = await processScorecard(attachment);
 
   if (!processResult.success) {
-    return await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, interaction)] });
+    await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, interaction)] });
+    return;
   }
 
   const { data } = processResult
@@ -92,43 +109,60 @@ export async function execute(interaction: CommandInteraction) {
 
   const options = interaction.options as CommandInteractionOptionResolver
 
-  const id = options.getString('id')!.trim()
-  const subid = options.getString('subid')?.trim()
-  const name = options.getString('song')!.trim()
-  const artist = options.getString('artist')!.trim()
-  const charter = options.getString('charter')!.trim()
-  const level = options.getString('level')
-  const cc = options.getNumber('cc')!
-  const notes = options.getInteger('notes')!
-  const difficulty = +options.getString('difficulty')! as Difficulty
+  const id = options.getString('id', true).trim()
+  const subid = options.getString('subid')?.trim() ?? undefined
 
-  const difficultyData: SongDifficultyData = { name, artist, charter, level: level ?? undefined, cc, notes, difficulty, subid: subid ?? undefined }
+  const name = options.getString('song', true).trim()
+  const artist = options.getString('artist', true).trim()
+  const charter = options.getString('charter', true).trim()
+  const level = options.getString('level') ?? undefined
+  const cc = options.getNumber('cc', true)
+  const notes = options.getInteger('notes', true)
+
+  const difficulty = +options.getString('difficulty')! as Difficulty
+  const pack = options.getString('pack', true).trim()
+  const subpack = options.getString('subpack')?.trim() ?? undefined
+
+
+  const difficultyData: SongDifficultyData = { name, artist, charter, level, cc, notes, difficulty, subid }
+  const extraData: SongExtraData = { pack: { base: pack, subpack } }
 
   const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
 
-  let undoMethod: ((x: SongData, col: typeof SongData) => void) | undefined = undefined;
+
+
+  let undoMethod: UndoMethod | undefined = undefined;
   let songdata: SongData | undefined = undefined;
 
   if (SongData.has(target => target.id === id)) {
     SongData.update(x => {
       songdata = x;
+      const oldExtra = Object.assign({}, x.extra)
+      x.extra = extraData
+
       const i = x.difficulties.findIndex(d => (d.difficulty === difficulty) && ((d.subid ?? "") === (subid ?? "")))
       if (i !== -1) {
-        console.log(i, x.difficulties[i])
-        const old = Object.assign({}, x.difficulties[i])
+        const oldDiff = Object.assign({}, x.difficulties[i])
         x.difficulties[i] = difficultyData;
-        undoMethod = restoreOldDifficultyOnCall(i, old)
+
+        undoMethod = restoreOldDifficultyOnCall(i, oldDiff, oldExtra)
       } else {
-        undoMethod = deleteIndexOnCall(x.difficulties.push(difficultyData) - 1)
+        undoMethod = deleteIndexOnCall(x.difficulties.push(difficultyData) - 1, oldExtra)
       }
+
     }, target => target.id === id)
-    if (!undoMethod || !songdata) return await interaction.followUp({ embeds: [createErrorEmbed("Something went wrong!", interaction)] });
+
+    if (!undoMethod || !songdata) {
+      await interaction.followUp({ embeds: [createErrorEmbed("Something went wrong!", interaction)] });
+      return;
+    }
+
   } else {
-    songdata = SongData.create({ id: id, difficulties: [difficultyData] })
+    songdata = SongData.create({ id: id, difficulties: [difficultyData], extra: extraData })
     undoMethod = deleteEntryOnCall
   }
 
-  const jacketPath = path.join(__dirname, '..', 'jackets', id + (subid ? "-" + subid : "") + '.png')
+  const jacketPath = path.join(process.cwd(), 'jackets', id + (subid ? "-" + subid : "") + '.png')
   let oldJacket: Buffer | undefined = undefined;
   try {
     oldJacket = await fs.readFile(jacketPath)
@@ -150,7 +184,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const response = await interaction.followUp({
     files: [new AttachmentBuilder(jacket, { name: "jacket.png" })],
-    embeds: [createUpdateDatabaseEmbed(id, difficultyData, Date.now() - now, interaction)],
+    embeds: [createUpdateDatabaseEmbed(id, difficultyData, extraData, Date.now() - now, interaction)],
     components: [row]
   })
 

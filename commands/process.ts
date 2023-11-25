@@ -51,7 +51,7 @@ export async function execute(interaction: CommandInteraction) {
       songEmbed = createErrorEmbed("Song not found.", interaction)
     }
     else {
-      songEmbed = createSongDataEmbed(song.difficulty, Date.now() - startCompareTime, interaction)
+      songEmbed = createSongDataEmbed(song.difficulty, song.song.extra, Date.now() - startCompareTime, interaction)
     }
 
     const replyContent: InteractionReplyOptions = {

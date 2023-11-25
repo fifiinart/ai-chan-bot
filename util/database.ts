@@ -12,8 +12,13 @@ export interface SongDifficultyData {
   level?: string
 }
 
+export interface SongExtraData {
+  pack: { base: string, subpack?: string }
+}
+
 export interface SongData {
   id: string,
+  extra: SongExtraData
   difficulties: SongDifficultyData[]
 }
 
