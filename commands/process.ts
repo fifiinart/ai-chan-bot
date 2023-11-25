@@ -1,10 +1,8 @@
 import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
-import { getDifficultyName } from "../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { compareJackets } from "../util/pixelmatch";
 import { CustomClient } from "..";
-import sharp from "sharp";
 import { createErrorEmbed, createProcessEmbed, createSongDataEmbed } from "../util/embed";
 export const data = new SlashCommandBuilder()
   .setName('process')
@@ -49,11 +47,11 @@ export async function execute(interaction: CommandInteraction) {
     let songEmbed;
     const startCompareTime = Date.now()
     const song = await compareJackets(difficulty, (interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
-    if (!song.song) {
+    if (!song.difficulty) {
       songEmbed = createErrorEmbed("Song not found.", interaction)
     }
     else {
-      songEmbed = createSongDataEmbed(song.song, Date.now() - startCompareTime, interaction)
+      songEmbed = createSongDataEmbed(song.difficulty, Date.now() - startCompareTime, interaction)
     }
 
     const replyContent: InteractionReplyOptions = {
