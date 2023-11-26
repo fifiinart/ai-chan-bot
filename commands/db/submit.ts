@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, ApplicationCommandOptionChannelTypesMixin, ApplicationCommandOptionType, ApplicationCommandStringOption, inlineCode } from "discord.js";
 import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../../util/get-attachments";
 import { processScorecard } from "../../util/process-scorecard";
@@ -9,6 +9,7 @@ import { CustomClient } from "../..";
 import sharp from "sharp";
 import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
 import SimplDB from "simpl.db";
+import { hasUnfulfilledOptions } from "../../util/hasUnfulfilledOptions";
 
 type UndoMethod = (songdata: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => void;
 const deleteIndexOnCall = (i: number, oldExtra: SongExtraData): UndoMethod => (songdata, col) => {
@@ -37,15 +38,12 @@ export const data = new SlashCommandSubcommandBuilder()
   .setName('submit')
   .setDescription('Submits an Arcaea jacket with information to the database.')
   .addStringOption(opt => opt
-    .setName('image')
-    .setDescription('Link to the score image, can be "m1" or blank to scrape from your last submission.')
-    .setRequired(false))
-  .addStringOption(opt => opt
     .setName("id")
-    .setDescription("The id of the song to add/overwrite the record."))
+    .setDescription("The id of the song to add/overwrite the record.")
+    .setRequired(true))
+
   .addStringOption(opt => opt
-    .setName("subid")
-    .setDescription("The subid of the jacket to add/overwrite the record. For songs with special jacket variants only."))
+    .setName('pack').setDescription('The pack name. (e.g. World Extend, Eternal Core, Lanota Collaboration)').setRequired(true))
   .addStringOption(opt => opt
     .setName('difficulty')
     .setDescription('The difficulty of the submitted score.')
@@ -53,30 +51,62 @@ export const data = new SlashCommandSubcommandBuilder()
       { name: "Past", value: "0" },
       { name: "Present", value: "1" },
       { name: "Future", value: "2" },
-      { name: "Beyond", value: "3" }))
+      { name: "Beyond", value: "3" }).setRequired(true))
   .addStringOption(opt => opt
-    .setName('song').setDescription('The song name.'))
+    .setName('song').setDescription('The song name.').setRequired(true))
   .addStringOption(opt => opt
-    .setName('artist').setDescription('The artist name.'))
+    .setName('artist').setDescription('The artist name.').setRequired(true))
   .addStringOption(opt => opt
-    .setName('charter').setDescription('The charter name as listed, for that difficulty.'))
-  .addStringOption(opt => opt
-    .setName('level').setDescription('The custom display level (dropdead FTR 8 - CC 9.1, etc.). Leave blank if consistent with CC.').setRequired(false)
-    .setChoices(...['1', '2', '3', '4', '5', '6', '7', '8', '9', '9+', '10', '10+', '11', '11+', '12'].map(x => ({ name: x, value: x }))))
+    .setName('charter').setDescription('The charter name as listed, for that difficulty.').setRequired(true))
   .addNumberOption(opt => opt
-    .setName('cc').setDescription('The chart constant.').setMinValue(0))
+    .setName('cc').setDescription('The chart constant.').setMinValue(0).setRequired(true))
   .addIntegerOption(opt => opt
-    .setName('notes').setDescription('The number of notes for that chart.').setMinValue(0))
+    .setName('notes').setDescription('The number of notes for that chart.').setMinValue(0).setRequired(true))
+
   .addStringOption(opt => opt
-    .setName('pack').setDescription('The pack name. (e.g. World Extend, Eternal Core, Lanota Collaboration)'))
+    .setName('image')
+    .setDescription('Link to the score image, can be "m1" or blank to scrape from your last submission.')
+    .setRequired(false))
+
+  .addStringOption(opt => opt
+    .setName("subid")
+    .setDescription("The subid of the jacket to add/overwrite the record. For songs with special jacket variants only.").setRequired(false))
   .addStringOption(opt => opt
     .setName('subpack')
     .setDescription('The sub-pack name. (e.g. "Shifting Veil", (Collaboration) "Chapter 2") Leave blank if doesn\'t apply.')
     .setRequired(false))
 
+  .addStringOption(opt => opt
+    .setName('level').setDescription('The custom display level (dropdead FTR 8 - CC 9.1, etc.). Leave blank if consistent with CC.').setRequired(false)
+    .setChoices(...['1', '2', '3', '4', '5', '6', '7', '8', '9', '9+', '10', '10+', '11', '11+', '12'].map(x => ({ name: x, value: x }))))
+
 export async function execute(interaction: CommandInteraction): Promise<void> {
 
   let now = Date.now();
+
+  const options = interaction.options as CommandInteractionOptionResolver
+
+  const { predicate, unfulfilledOptions } = hasUnfulfilledOptions(options, data);
+  if (predicate) {
+    await interaction.reply({ embeds: [createErrorEmbed(`Options ${unfulfilledOptions.map(([x]) => inlineCode(x)).join(', ')} have no value.`, interaction)] });
+    return;
+  }
+
+
+  const id = options.getString('id', true).trim()
+  const name = options.getString('song', true).trim()
+  const artist = options.getString('artist', true).trim()
+  const charter = options.getString('charter', true).trim()
+  const cc = options.getNumber('cc', true)
+  const notes = options.getInteger('notes', true)
+  const difficulty = +options.getString('difficulty', true) as Difficulty
+  const pack = options.getString('pack', true).trim()
+
+  const subid = options.getString('subid')?.trim() ?? undefined
+  const level = options.getString('level') ?? undefined
+  const subpack = options.getString('subpack')?.trim() ?? undefined
+
+
 
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
@@ -103,26 +133,9 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
     return;
   }
 
-  const { data } = processResult
+  const { data: resultDat } = processResult
 
-  const { jacket } = data.files
-
-  const options = interaction.options as CommandInteractionOptionResolver
-
-  const id = options.getString('id', true).trim()
-  const subid = options.getString('subid')?.trim() ?? undefined
-
-  const name = options.getString('song', true).trim()
-  const artist = options.getString('artist', true).trim()
-  const charter = options.getString('charter', true).trim()
-  const level = options.getString('level') ?? undefined
-  const cc = options.getNumber('cc', true)
-  const notes = options.getInteger('notes', true)
-
-  const difficulty = +options.getString('difficulty')! as Difficulty
-  const pack = options.getString('pack', true).trim()
-  const subpack = options.getString('subpack')?.trim() ?? undefined
-
+  const { jacket } = resultDat.files
 
   const difficultyData: SongDifficultyData = { name, artist, charter, level, cc, notes, difficulty, subid }
   const extraData: SongExtraData = { pack: { base: pack, subpack } }
@@ -211,3 +224,4 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
   }
 
 }
+

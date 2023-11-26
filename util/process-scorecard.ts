@@ -105,7 +105,13 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     return ocr.data.text.trim();
   };
 
-  const promises = [...[diff5Img, diff4Img].map((x, i) => sharpToText(x, i, scheduler)), ...[combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))]
+  const promises = [...[diff5Img, diff4Img.affine([1, -0.1, 0, 1], { "background": "white" }).extend({
+    background: 'white',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    right: 4
+  })].map((x, i) => sharpToText(x, i, scheduler)), ...[combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))]
 
   const [diff5, diff4, combo4, combo5, score] = await Promise.all(promises)
 
