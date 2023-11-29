@@ -27,11 +27,23 @@ module.exports = {
 
     delete require.cache[require.resolve(`./${command.data.name}.ts`)];
 
-    const utilFiles = await fs.readdir(path.join(__dirname, "..", "util"))
+    const utilFiles = await fs.readdir(path.join(process.cwd(), "util"))
     for (const file of utilFiles.filter(filename => filename.endsWith('.ts'))) {
       delete require.cache[require.resolve(`../util/${file}`)];
       require(`../util/${file}`)
       console.log(`${file} uncached`)
+    }
+
+    try {
+      const utilFiles = await fs.readdir(path.join(process.cwd(), "commands", command.data.name))
+      for (const file of utilFiles.filter(filename => filename.endsWith('.ts'))) {
+        delete require.cache[require.resolve(`../util/${file}`)];
+        require(`../util/${file}`)
+        console.log(`${command.data.name} ${file} uncached`)
+      }
+
+    } catch (e) {
+      console.error(e)
     }
 
     try {
