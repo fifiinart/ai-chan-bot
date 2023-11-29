@@ -105,7 +105,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     return ocr.data.text.trim();
   };
 
-  const promises = [...[diff5Img, diff4Img.affine([1, -0.1, 0, 1], { "background": "white" }).extend({
+  const promises = [...[diff5Img.threshold(190), diff4Img.threshold(190).affine([1, -0.1, 0, 1], { "background": "white" }).extend({
     background: 'white',
     top: 4,
     bottom: 4,
