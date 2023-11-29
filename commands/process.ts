@@ -3,7 +3,8 @@ import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { compareJackets } from "../util/pixelmatch";
 import { CustomClient } from "..";
-import { createErrorEmbed, createProcessEmbed, createSongDataEmbed } from "../util/embed";
+import { createErrorEmbed, createProcessEmbed, createSongAnalysisEmbed, createSongDataEmbed } from "../util/embed";
+import { analyzeScore } from "../util/analyze-score";
 export const data = new SlashCommandBuilder()
   .setName('process')
   .setDescription('Processes an Arcaea score screenshot.')
@@ -14,15 +15,17 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
 
+  await interaction.deferReply();
+
   let now = Date.now();
 
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
-    return await interaction.reply({ embeds: [createErrorEmbed(result.error, interaction)] })
+    return await interaction.followUp({ embeds: [createErrorEmbed(result.error, interaction)] })
   }
 
   console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
-  await interaction.deferReply();
+
 
   const attachments = result.data;
 
@@ -48,15 +51,15 @@ export async function execute(interaction: CommandInteraction) {
     const startCompareTime = Date.now()
     const song = await compareJackets(difficulty, (interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
     if (!song.difficulty) {
-      songEmbed = createErrorEmbed("Song not found.", interaction)
+      songEmbed = [createErrorEmbed("Song not found.", interaction)]
     }
     else {
-      songEmbed = createSongDataEmbed(song.difficulty, song.song.extra, Date.now() - startCompareTime, interaction)
+      songEmbed = [createSongDataEmbed(song.difficulty, song.song.extra, Date.now() - startCompareTime, interaction), createSongAnalysisEmbed(analyzeScore(data.data, song), interaction)]
     }
 
     const replyContent: InteractionReplyOptions = {
       files: files.map(([name, file]) => new AttachmentBuilder(file, { name: name + '.png' })),
-      embeds: [createProcessEmbed(interval, score, difficulty, combo, interaction), songEmbed]
+      embeds: [createProcessEmbed(interval, score, difficulty, combo, interaction), ...songEmbed]
     };
     await interaction.followUp(replyContent)
   }

@@ -1,6 +1,7 @@
 import { APIEmbed, CommandInteraction, EmbedBuilder, GuildMember, bold } from "discord.js";
 import { Difficulty, getDifficultyName } from "./img-format-constants";
 import { SongDifficultyData, SongExtraData } from "./database";
+import { ScoreAnalysis } from "./analyze-score";
 
 export const SUCCESS_COLOR = 0x4BB543
 export const ERROR_COLOR = 0xF44336
@@ -74,8 +75,7 @@ ${bold('CC:')} ${songdata.cc.toFixed(1)}`,
       "inline": false
     }, {
       "name": `Extra Info`,
-      "value": `${bold('Artist:')} ${songdata.artist}
-${bold('Charter:')} ${songdata.charter}
+      "value": `${bold('Artist:')} ${songdata.artist}${songdata.charter ? '\n' + bold('Charter: ') + songdata.charter : ""}
 ${bold('# Notes:')} ${songdata.notes}`,
       "inline": false
     }).setThumbnail("attachment://jacket.png")
@@ -95,9 +95,30 @@ ${bold('CC:')} ${songdata.cc.toFixed(1)}`,
       "inline": false
     }, {
       "name": `Extra Info`,
-      "value": `${bold('Artist:')} ${songdata.artist}
-${bold('Charter:')} ${songdata.charter}
+      "value": `${bold('Artist:')} ${songdata.artist}${songdata.charter ? '\n' + bold('Charter: ') + songdata.charter : ""}
 ${bold('# Notes:')} ${songdata.notes}`,
       "inline": false
     }).setThumbnail("attachment://jacket.png")
+}
+
+export function createSongAnalysisEmbed(analysis: ScoreAnalysis, interaction: CommandInteraction) {
+  const embed = createSuccessEmbed("Score Analysis", null, interaction)
+    .addFields({
+      "name": "Grade",
+      "value": analysis.grade,
+      "inline": true
+    }, {
+      "name": "Longest Combo Percent",
+      "value": (analysis.percentLongestCombo * 100).toFixed(2) + "%" + (analysis.isFullRecall ? " (FR)" : ""),
+      "inline": true
+    })
+
+  if (analysis.isPureMemory) {
+    embed.addFields({
+      "name": "Pure Memory",
+      "value": "MAX-" + analysis.nonShinies,
+      "inline": true
+    })
+  }
+  return embed
 }
