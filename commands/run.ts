@@ -41,6 +41,8 @@ export async function execute(interaction: CommandInteraction) {
     const files = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
       .map((region) => sharpStream.clone().extract(region).png())
 
+    files[2].threshold(190)
+
     const replyContent: InteractionReplyOptions = {
       files: await Promise.all(files.map(async x => new AttachmentBuilder(await x.toBuffer(), { name: "cropped.png" })))
     };
