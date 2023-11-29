@@ -56,8 +56,6 @@ export const data = new SlashCommandSubcommandBuilder()
     .setName('song').setDescription('The song name.').setRequired(true))
   .addStringOption(opt => opt
     .setName('artist').setDescription('The artist name.').setRequired(true))
-  .addStringOption(opt => opt
-    .setName('charter').setDescription('The charter name as listed, for that difficulty.').setRequired(true))
   .addNumberOption(opt => opt
     .setName('cc').setDescription('The chart constant.').setMinValue(0).setRequired(true))
   .addIntegerOption(opt => opt
@@ -79,6 +77,8 @@ export const data = new SlashCommandSubcommandBuilder()
   .addStringOption(opt => opt
     .setName('level').setDescription('The custom display level (dropdead FTR 8 - CC 9.1, etc.). Leave blank if consistent with CC.').setRequired(false)
     .setChoices(...['1', '2', '3', '4', '5', '6', '7', '8', '9', '9+', '10', '10+', '11', '11+', '12'].map(x => ({ name: x, value: x }))))
+  .addStringOption(opt => opt
+    .setName('charter').setDescription('The charter name as listed, for that difficulty.').setRequired(false))
 
 export async function execute(interaction: CommandInteraction): Promise<void> {
 
@@ -86,17 +86,11 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
 
   const options = interaction.options as CommandInteractionOptionResolver
 
-  const { predicate, unfulfilledOptions } = hasUnfulfilledOptions(options, data);
-  if (predicate) {
-    await interaction.reply({ embeds: [createErrorEmbed(`Options ${unfulfilledOptions.map(([x]) => inlineCode(x)).join(', ')} have no value.`, interaction)] });
-    return;
-  }
-
 
   const id = options.getString('id', true).trim()
   const name = options.getString('song', true).trim()
   const artist = options.getString('artist', true).trim()
-  const charter = options.getString('charter', true).trim()
+  const charter = options.getString('charter')?.trim() ?? undefined
   const cc = options.getNumber('cc', true)
   const notes = options.getInteger('notes', true)
   const difficulty = +options.getString('difficulty', true) as Difficulty
@@ -106,16 +100,15 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
   const level = options.getString('level') ?? undefined
   const subpack = options.getString('subpack')?.trim() ?? undefined
 
-
+  await interaction.deferReply();
 
   const result = await getAttachmentsFromMessage(interaction);
   if (!result.success) {
-    await interaction.reply(result.error);
+    await interaction.followUp(result.error);
     return;
   }
 
   console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
-  await interaction.deferReply();
 
   const attachments = result.data;
 

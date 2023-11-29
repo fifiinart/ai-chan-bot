@@ -5,7 +5,7 @@ export interface SongDifficultyData {
   subid?: string,
   name: string,
   artist: string,
-  charter: string,
+  charter?: string,
   cc: number,
   difficulty: Difficulty,
   notes: number,
