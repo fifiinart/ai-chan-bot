@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, ApplicationCommandOptionChannelTypesMixin, ApplicationCommandOptionType, ApplicationCommandStringOption, inlineCode } from "discord.js";
+import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, ApplicationCommandOptionChannelTypesMixin, ApplicationCommandOptionType, ApplicationCommandStringOption, inlineCode } from "discord.js";
 import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../../util/get-attachments";
 import { processScorecard } from "../../util/process-scorecard";
@@ -9,7 +9,6 @@ import { CustomClient } from "../..";
 import sharp from "sharp";
 import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
 import SimplDB from "simpl.db";
-import { hasUnfulfilledOptions } from "../../util/hasUnfulfilledOptions";
 
 type UndoMethod = (songdata: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => void;
 const deleteIndexOnCall = (i: number, oldExtra: SongExtraData): UndoMethod => (songdata, col) => {
@@ -81,6 +80,11 @@ export const data = new SlashCommandSubcommandBuilder()
     .setName('charter').setDescription('The charter name as listed, for that difficulty.').setRequired(false))
 
 export async function execute(interaction: CommandInteraction): Promise<void> {
+
+  if (![process.env.GUILD_ID, process.env.GUILD_ID_2].includes(interaction.guild?.id) || interaction.member?.user.id !== process.env.OWNER_ID) {
+    await interaction.reply("Only the owner or members of trusted guilds can submit information!");
+    return;
+  }
 
   let now = Date.now();
 

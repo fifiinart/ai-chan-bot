@@ -68,11 +68,11 @@ const rest = new REST().setToken(process.env.TOKEN!);
 
 (async () => {
   try {
-    console.log(`Started refreshing ${registerData.length} application (/) commands to fifiinart.`);
+    console.log(`Started refreshing ${registerData.length} application (/) commands.`);
 
     // The put method is used to fully refresh all commands in the guild with the current set
     const data: any = await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID!, process.env.GUILD_ID!),
+      Routes.applicationCommands(process.env.CLIENT_ID!),
       { body: registerData },
     );
 
@@ -82,20 +82,3 @@ const rest = new REST().setToken(process.env.TOKEN!);
     console.error(error);
   }
 })();
-
-(async () => {
-  try {
-    console.log(`Started refreshing ${registerData.length} application (/) commands to not arccord.`);
-
-    // The put method is used to fully refresh all commands in the guild with the current set
-    const data: any = await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID!, process.env.GUILD_ID_2!),
-      { body: registerData },
-    );
-
-    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
-  } catch (error) {
-    // And of course, make sure you catch and log any errors!
-    console.error(error);
-  }
-})()

@@ -85,5 +85,5 @@ export function calculatePlayRating(score: number, cc: number) {
     scoreModifier = (score - 9_500_000) / 300_000;
   }
 
-  return Math.min(0, cc + scoreModifier);
+  return Math.max(0, cc + scoreModifier);
 }
