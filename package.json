@@ -9,6 +9,7 @@
     "discord.js": "^14.13.0",
     "disjoint-set-ds": "^1.0.1",
     "dotenv": "^16.3.1",
+    "fuse.js": "^7.0.0",
     "pixelmatch": "^5.3.0",
     "sharp": "^0.32.6",
     "simpl.db": "^2.12.1",
