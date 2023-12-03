@@ -58,7 +58,7 @@ export function createProcessEmbed(interval: number, score: number, difficulty: 
       "value": `${combo}`,
       "inline": true
     })
-    .setImage("attachment://scorecard.png")
+  // .setImage("attachment://scorecard.png")
 }
 
 export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number, interaction: CommandInteraction) {
@@ -106,18 +106,22 @@ export function createSongAnalysisEmbed(analysis: ScoreAnalysis, interaction: Co
     .addFields({
       "name": "Grade",
       "value": analysis.grade,
-      "inline": true
+      "inline": false
     }, {
-      "name": "Longest Combo Percent",
+      "name": "Play Rating",
+      "value": analysis.playRating.toFixed(4),
+      "inline": false
+    }, {
+      "name": "Longest Combo %",
       "value": (analysis.percentLongestCombo * 100).toFixed(2) + "%" + (analysis.isFullRecall ? " (FR)" : ""),
-      "inline": true
+      "inline": false
     })
 
   if (analysis.isPureMemory) {
     embed.addFields({
       "name": "Pure Memory",
       "value": "MAX-" + analysis.nonShinies,
-      "inline": true
+      "inline": false
     })
   }
   return embed
