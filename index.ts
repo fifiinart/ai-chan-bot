@@ -1,19 +1,19 @@
 
 // Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from "discord.js";
 import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
 import { Database } from "simpl.db";
 import { setupDB } from "./util/database";
 
-interface Command {
-  data: SlashCommandBuilder
+export interface CommandLike<C extends SlashCommandBuilder | SlashCommandSubcommandBuilder | SlashCommandSubcommandGroupBuilder = SlashCommandBuilder> {
+  data: C
   execute(interaction: CommandInteraction): Promise<void>
 }
 
 export interface CustomClient extends Client {
-  commands: Collection<string, Command>,
+  commands: Collection<string, CommandLike>,
   db: Database
 }
 
@@ -40,7 +40,7 @@ const registerData: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
-  const command: Command = require(filePath);
+  const command: CommandLike = require(filePath);
   // Set a new item in the Collection with the key as the command name and the value as the exported module
   if ('data' in command && 'execute' in command) {
     client.commands.set(command.data.name, command);
