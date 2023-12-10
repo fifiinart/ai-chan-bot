@@ -1,4 +1,4 @@
-import { APIEmbed, CommandInteraction, EmbedBuilder, GuildMember, bold } from "discord.js";
+import { CommandInteraction, EmbedBuilder, GuildMember, bold } from "discord.js";
 import { Difficulty, getDifficultyName } from "./img-format-constants";
 import { SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";

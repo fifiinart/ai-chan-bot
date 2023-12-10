@@ -1,13 +1,15 @@
-import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, ApplicationCommandOptionChannelTypesMixin, ApplicationCommandOptionType, ApplicationCommandStringOption, inlineCode } from "discord.js";
+import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType } from "discord.js";
+import { CustomClient } from "../..";
+
 import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
 import { getAttachmentsFromMessage } from "../../util/get-attachments";
 import { processScorecard } from "../../util/process-scorecard";
 import { SongData, SongDifficultyData, SongExtraData } from "../../util/database";
+import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
+
 import fs from "fs/promises"
 import path from "path";
-import { CustomClient } from "../..";
 import sharp from "sharp";
-import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
 import SimplDB from "simpl.db";
 
 type UndoMethod = (songdata: SongData, col: SimplDB.Collection<SimplDB.Readable<SongData>>) => void;
@@ -198,10 +200,10 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
     components: [row]
   })
 
-  const collectorFilter = (i: { user: { id: string; }; }) => i.user.id === interaction.user.id;
+  const collectorFilter: CollectorFilter<[ButtonInteraction]> = i => i.user.id === interaction.user.id;
 
   try {
-    const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+    const confirmation = await response.awaitMessageComponent<ComponentType.Button>({ filter: collectorFilter, time: 60000 });
 
     if (confirmation.customId = "undo") {
       undoMethod(songdata, SongData)
