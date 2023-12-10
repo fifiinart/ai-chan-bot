@@ -1,6 +1,6 @@
 
 // Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from "discord.js";
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction } from "discord.js";
 import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
@@ -10,6 +10,7 @@ import { setupDB } from "./util/database";
 export interface CommandLike<C extends SlashCommandBuilder | SlashCommandSubcommandBuilder | SlashCommandSubcommandGroupBuilder = SlashCommandBuilder> {
   data: C
   execute(interaction: CommandInteraction): Promise<void>
+  autocomplete?(interaction: AutocompleteInteraction): Promise<void>
 }
 
 export interface CustomClient extends Client {

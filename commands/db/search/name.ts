@@ -1,4 +1,4 @@
-import { CommandInteraction, SlashCommandSubcommandBuilder, bold } from "discord.js";
+import { AutocompleteInteraction, CommandInteraction, SlashCommandSubcommandBuilder, bold } from "discord.js";
 import type { CustomClient } from "../../.."
 import type { SongData } from "../../../util/database";
 import { stitchMessages } from "../../../util/stitch-messages";
@@ -38,4 +38,8 @@ export async function execute(interaction: CommandInteraction) {
       ({ content: `${bold(`${result.item.difficulties[0].name} (${i + 1}/${results.length})`)}\nScore: ${result.score}` })
     ),
     interaction, 'reply')
+}
+
+export async function autocomplete(interaction: AutocompleteInteraction) {
+  interaction.respond([{ name: "Hello World", value: "Hello World" }])
 }

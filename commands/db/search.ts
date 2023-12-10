@@ -1,4 +1,4 @@
-import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, SlashCommandSubcommandsOnlyBuilder, inlineCode } from "discord.js";
+import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, AutocompleteInteraction } from "discord.js";
 import { createErrorEmbed } from "../../util/embed";
 import path from "path";
 import { CommandLike } from "../..";
@@ -7,7 +7,7 @@ import fs from "fs"
 let data = new SlashCommandSubcommandGroupBuilder()
   .setName("search")
   .setDescription("Search the database.")
-const subcommandExecutes = new Map<string, CommandLike["execute"]>()
+const subcommands = new Map<string, CommandLike<SlashCommandSubcommandBuilder>>()
 
 const commandsPath = path.join(__dirname, 'search');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
@@ -28,7 +28,7 @@ for (const file of commandFiles) {
   // Set a new item in the Collection with the key as the command name and the value as the exported module
   if (objectIsCommandLike(subcommand)) {
     data = data.addSubcommand(subcommand.data);
-    subcommandExecutes.set(subcommand.data.name, subcommand.execute)
+    subcommands.set(subcommand.data.name, subcommand)
     console.log(`Subcommand ${subcommand.data.name} registered!`)
   } else {
     console.log(`[WARNING] The subcommand at ${filePath} is missing a required "data" or "execute" property.`);
@@ -37,9 +37,21 @@ for (const file of commandFiles) {
 
 async function execute(interaction: CommandInteraction) {
   const subcommand = (<CommandInteractionOptionResolver>interaction.options).getSubcommand()
-  if (subcommandExecutes.has(subcommand)) {
-    return subcommandExecutes.get(subcommand)!(interaction)
+  if (subcommands.has(subcommand)) {
+    return subcommands.get(subcommand)!.execute(interaction)
   }
   await interaction.reply({ embeds: [createErrorEmbed(`Subcommand ${inlineCode(subcommand)} not found in command ${inlineCode(data.name)}.`, interaction)] })
 }
-export { data, execute };
+
+async function autocomplete(interaction: AutocompleteInteraction) {
+  const subcommand = (<CommandInteractionOptionResolver>interaction.options).getSubcommand()
+  if (subcommands.has(subcommand)) {
+    const subcommandData = subcommands.get(subcommand)!
+    if (typeof subcommandData.autocomplete === "function") {
+      return subcommandData.autocomplete(interaction)
+    }
+  }
+
+  console.error(`No autocomplete function found for subcommand ${inlineCode(subcommand)} in command ${inlineCode(data.name)}.`)
+}
+export { data, execute, autocomplete };
