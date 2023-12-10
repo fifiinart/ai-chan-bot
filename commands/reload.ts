@@ -5,6 +5,29 @@ import path from "path";
 import "dotenv/config"
 import { createErrorEmbed, createSuccessEmbed } from "../util/embed";
 
+async function rerequireDirectory(dir: string, basePath: string) {
+  try {
+    const results = await fs.readdir(path.join(basePath, dir), { withFileTypes: true })
+    const directories = results.filter(dirent => dirent.isDirectory())
+    const files = results.filter(dirent => dirent.isFile() && dirent.name.endsWith('.ts'))
+
+    for (const directory of directories) {
+      await rerequireDirectory(path.join(dir, directory.name), basePath)
+    }
+
+    for (const file of files) {
+      delete require.cache[require.resolve(`${basePath}/${dir}/${file.name}`)];
+      require(`${basePath}/${dir}/${file.name}`)
+      console.log(`${dir}/${file.name} uncached`)
+    }
+    console.log(`${dir} directory uncached`)
+  } catch (e: any) {
+    if (e?.code === "ENOENT")
+      console.error(e)
+    else throw e;
+  }
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('reload')
@@ -26,25 +49,8 @@ module.exports = {
     }
 
     delete require.cache[require.resolve(`./${command.data.name}.ts`)];
-
-    const utilFiles = await fs.readdir(path.join(process.cwd(), "util"))
-    for (const file of utilFiles.filter(filename => filename.endsWith('.ts'))) {
-      delete require.cache[require.resolve(`../util/${file}`)];
-      require(`../util/${file}`)
-      console.log(`${file} uncached`)
-    }
-
-    try {
-      const utilFiles = await fs.readdir(path.join(process.cwd(), "commands", command.data.name))
-      for (const file of utilFiles.filter(filename => filename.endsWith('.ts'))) {
-        delete require.cache[require.resolve(`../util/${file}`)];
-        require(`../util/${file}`)
-        console.log(`${command.data.name} ${file} uncached`)
-      }
-
-    } catch (e) {
-      console.error(e)
-    }
+    await rerequireDirectory("util", process.cwd())
+    await rerequireDirectory(path.join("commands", command.data.name), process.cwd())
 
     try {
       const newCommand = require(`./${command.data.name}.ts`);
