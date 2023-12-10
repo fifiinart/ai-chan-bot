@@ -1,7 +1,10 @@
-import { AutocompleteInteraction, CommandInteraction, SlashCommandSubcommandBuilder, bold } from "discord.js";
+import { AutocompleteInteraction, BaseInteraction, CommandInteraction, SlashCommandSubcommandBuilder, bold } from "discord.js";
 import type { CustomClient } from "../../.."
 import type { SongData } from "../../../util/database";
 import { stitchMessages } from "../../../util/stitch-messages";
+import { createErrorEmbed } from "../../../util/embed";
+
+let _songdata: SongData[] | null = null;
 
 export const data = new SlashCommandSubcommandBuilder()
   .setName('name')
@@ -15,10 +18,28 @@ export const data = new SlashCommandSubcommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   const query = interaction.options.get('name', true).value as string
 
-  const Fuse = (await import('fuse.js')).default
+  const fuse = await initializeFuse(interaction.client as CustomClient);
 
-  const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
-  const fuse = new Fuse<SongData>(SongData.getAll(), {
+  const results = fuse.search(query, {
+    limit: 10
+  })
+
+  if (results.length === 0) {
+    return createErrorEmbed("No Matches Found", interaction)
+  }
+
+  return stitchMessages(
+    results.map((result, i) =>
+      ({ content: `${bold(`${result.item.difficulties[0].name} (${i + 1}/${results.length})`)}\nScore: ${result.score}` })
+    ),
+    interaction, 'reply')
+}
+
+async function initializeFuse(client: CustomClient) {
+  const Fuse = (await import('fuse.js')).default;
+
+  _songdata ??= client.db.getCollection<SongData>("songdata")!.getAll();
+  return new Fuse<SongData>(_songdata, {
     includeScore: true,
     threshold: 0.2,
     keys: [
@@ -27,19 +48,14 @@ export async function execute(interaction: CommandInteraction) {
       },
       { name: ["difficulties", "name"], weight: .3 }
     ]
-  })
+  });
 
-  const results = fuse.search(query, {
-    limit: 10
-  })
-
-  await stitchMessages(
-    results.map((result, i) =>
-      ({ content: `${bold(`${result.item.difficulties[0].name} (${i + 1}/${results.length})`)}\nScore: ${result.score}` })
-    ),
-    interaction, 'reply')
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
-  interaction.respond([{ name: "Hello World", value: "Hello World" }])
+  const query = interaction.options.getFocused();
+  const result = (await initializeFuse(interaction.client as CustomClient)).search(query, { limit: 25 })
+  const names = Array.from(new Set(result.flatMap(x => x.item.difficulties.map(x => x.name))))
+  if (names.length > 25) names.splice(25)
+  interaction.respond(names.map(name => ({ name, value: name })))
 }
