@@ -40,7 +40,7 @@ export async function compareJackets(difficulty: Difficulty, songdata: SimplDB.C
   }
 
   console.log(`Finished pixelmatching ${songPaths.size} images in ${(Date.now() - time) / 1000} seconds`)
-  console.log(`Diff: ${minDiff}, Candidate: ${songCandidate}`)
+  console.log(`Diff: ${minDiff}, Candidate: `, songCandidate)
 
   if (songCandidate[0] == null)
     return { diffPixels: minDiff, difficulty: songCandidate[1], song: songCandidate[0] };
