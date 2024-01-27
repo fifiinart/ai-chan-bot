@@ -1,7 +1,11 @@
-import { CommandInteraction, EmbedBuilder, GuildMember, bold } from "discord.js";
+import { APIEmbed, AttachmentBuilder, CommandInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, JSONEncodable, bold } from "discord.js";
 import { Difficulty, getDifficultyName } from "./img-format-constants";
-import { SongDifficultyData, SongExtraData } from "./database";
+import { SongData, SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";
+import { groupBy } from "./array-group";
+
+import fs from 'fs/promises'
+import path from "path";
 
 export const SUCCESS_COLOR = 0x4BB543
 export const ERROR_COLOR = 0xF44336
@@ -37,9 +41,9 @@ export function createErrorEmbed(error: string, interaction: CommandInteraction)
     .setDescription(error)
     .setColor(ERROR_COLOR)
 }
-export function createSuccessEmbed(title: string, interval: number | null, interaction: CommandInteraction) {
+export function createSuccessEmbed(title: string | null, interval: number | null, interaction: CommandInteraction) {
   return createGenericEmbed(interaction)
-    .setTitle(title + (interval === null ? "" : ` (${interval / 1000}s)`))
+    .setTitle(title ? title + (interval === null ? "" : ` (${interval / 1000}s)`) : null)
     .setColor(SUCCESS_COLOR)
 }
 
@@ -61,7 +65,7 @@ export function createProcessEmbed(interval: number, score: number, difficulty: 
   // .setImage("attachment://scorecard.png")
 }
 
-export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number, interaction: CommandInteraction) {
+export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction: CommandInteraction) {
   return createSuccessEmbed("Song Data", interval, interaction)
     .addFields({
       "name": `Song`,
@@ -81,7 +85,54 @@ ${bold('# Notes:')} ${songdata.notes}`,
     }).setThumbnail("attachment://jacket.png")
 }
 
-export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number, interaction: CommandInteraction) {
+export async function createDatabaseGetEmbedList(songs: SongData[], interaction: CommandInteraction) {
+  const results: InteractionReplyOptions[] = []
+  for (const song of songs) {
+    const { difficulties, extra, id } = song
+    results.push(...await Promise.all(Object.entries(groupBy(difficulties, "name")).map(async ([name, sharedName]) => {
+      const embeds = [
+        createSuccessEmbed("Database Search Result", null, interaction)
+          .addFields({
+            "name": `Song`,
+            "value": `${name}
+        ${bold('Pack:')} ${extra.pack.base} ${extra.pack.subpack ? "| " + extra.pack.subpack : ""}`
+          }),
+        ...sharedName.map(difficulty => {
+          return createSuccessEmbed(null, null, interaction)
+            .addFields({
+              "name": `Difficulty`,
+              "value": `${bold('Level:')} ${getDifficultyName(difficulty.difficulty)} ${ccToLevel(difficulty)}
+        ${bold('CC:')} ${difficulty.cc.toFixed(1)}`,
+              "inline": false
+            }, {
+              "name": `Extra Info`,
+              "value": `${bold('Artist:')} ${difficulty.artist}${difficulty.charter ? '\n' + bold('Charter: ') + difficulty.charter : ""}
+        ${bold('# Notes:')} ${difficulty.notes}`,
+              "inline": false
+            }).setThumbnail(`attachment://${id + (difficulty.subid ? '-' + difficulty.subid : '')}.png`)
+        })]
+
+      console.log(id)
+      const fileNames = Array.from(new Set(sharedName.map(difficulty => id + (difficulty.subid ? '-' + difficulty.subid : '') + '.png')))
+      const files = await Promise.all(fileNames.map(
+        async file => new AttachmentBuilder(
+          await fs.readFile(path.join(process.cwd(), 'jackets', file)),
+          { name: file }
+        )
+      ))
+      return { embeds, files }
+    })))
+  }
+
+  results.forEach((element, i) => {
+    const firstEmbed = element.embeds![0] as EmbedBuilder
+    firstEmbed.setTitle(firstEmbed.data.title! + ` (${i + 1}/${results.length}):`)
+  });
+
+  return results;
+}
+
+export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction: CommandInteraction) {
   return createSuccessEmbed("Update Database", interval, interaction)
     .addFields({
       "name": `Song`,
