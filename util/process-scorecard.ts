@@ -71,16 +71,21 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   console.log("Extract and process image: %ds", -(now - Date.now()) / 1000)
   now = Date.now()
 
-  const scheduler = createScheduler()
-  const workerN = 2;
-  await Promise.all(Array(workerN).fill(0).map(async (_, i) => {
-    const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
-      // @ts-ignore
-      load_system_dawg: '0',
-      load_freq_dawg: '0',
-    })
-    scheduler.addWorker(worker)
-  }))
+  const normalWorker = await createWorker("eng", OEM.TESSERACT_ONLY, {
+    // @ts-ignore
+    load_system_dawg: '0',
+    load_freq_dawg: '0',
+  })
+
+  const uppercaseAlphaWorker = await createWorker("eng", OEM.TESSERACT_ONLY, {
+    // @ts-ignore
+    load_system_dawg: '0',
+    load_freq_dawg: '0',
+  })
+  await uppercaseAlphaWorker.setParameters({
+    tessedit_char_whitelist: "PASTRENFUBYOD",
+    tessedit_pageseg_mode: PSM.SINGLE_WORD
+  })
 
   const digitScheduler = createScheduler()
   const workerDigitN = 2;
@@ -105,17 +110,20 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     return ocr.data.text.trim();
   };
 
-  const promises = [...[diff5Img.threshold(190), diff4Img.threshold(190).affine([1, -0.1, 0, 1], { "background": "white" }).extend({
+  const diff5 = (await uppercaseAlphaWorker.recognize(await diff5Img.threshold(190).toBuffer())).data.text.trim()
+  const diff4 = (await normalWorker.recognize(await diff4Img.threshold(190).affine([1, -0.1, 0, 1], { "background": "white" }).extend({
     background: 'white',
     top: 4,
     bottom: 4,
     left: 4,
     right: 4
-  })].map((x, i) => sharpToText(x, i, scheduler)), ...[combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))]
+  }).toBuffer())).data.text.trim()
 
-  const [diff5, diff4, combo4, combo5, score] = await Promise.all(promises)
+  const promises = [combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))
 
-  scheduler.terminate()
+  const [combo4, combo5, score] = await Promise.all(promises)
+
+  digitScheduler.terminate()
 
   console.log("OCR text: %ds", -(now - Date.now()) / 1000)
   now = Date.now()
