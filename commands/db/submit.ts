@@ -83,7 +83,7 @@ export const data = new SlashCommandSubcommandBuilder()
 
 export async function execute(interaction: CommandInteraction): Promise<void> {
 
-  if (![process.env.GUILD_ID, process.env.GUILD_ID_2].includes(interaction.guild?.id) || interaction.member?.user.id !== process.env.OWNER_ID) {
+  if ((![process.env.GUILD_ID, process.env.GUILD_ID_2].includes(interaction.guild?.id)) && (interaction.member?.user.id !== process.env.OWNER_ID)) {
     await interaction.reply("Only the owner or members of trusted guilds can submit information!");
     return;
   }
