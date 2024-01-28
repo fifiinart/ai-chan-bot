@@ -1,7 +1,7 @@
 import { AutocompleteInteraction, BaseInteraction, CommandInteraction, SlashCommandSubcommandBuilder, bold } from "discord.js";
 import type { CustomClient } from "../../.."
 import { stitchMessages } from "../../../util/stitch-messages";
-import { createErrorEmbed } from "../../../util/embed";
+import { createDatabaseGetEmbedList, createErrorEmbed } from "../../../util/embed";
 import { initializeFuse, searchSongdata } from "../../../util/search";
 
 export const data = new SlashCommandSubcommandBuilder()
@@ -12,20 +12,35 @@ export const data = new SlashCommandSubcommandBuilder()
     .setDescription("The name of the song to search for.")
     .setAutocomplete(true)
     .setRequired(true))
+  .addStringOption(opt => opt
+    .setName('difficulty')
+    .setDescription('The difficulty of the song to search for.')
+    .addChoices(
+      { name: "Past", value: "0" },
+      { name: "Present", value: "1" },
+      { name: "Future", value: "2" },
+      { name: "Beyond", value: "3" }).setRequired(false))
 
 export async function execute(interaction: CommandInteraction) {
-  const query = interaction.options.get('name', true).value as string
+  const nameQuery = interaction.options.get('name', true).value as string
+  const difficultyQuery = interaction.options.get('difficulty')
 
-  const results = await searchSongdata(interaction.client as CustomClient, 'name', query)
+  const results = (await searchSongdata(interaction.client as CustomClient, 'name', nameQuery))
+    .map(res => res.item)
+    .map(item => ({
+      ...item, difficulties: item.difficulties.filter(
+        diff => !difficultyQuery || diff.difficulty.toString() === difficultyQuery.value
+      )
+    }))
+    .filter(item => item.difficulties.length > 0)
+
 
   if (results.length === 0) {
     return await interaction.reply({ embeds: [createErrorEmbed("No Matches Found", interaction)] })
   }
 
   return stitchMessages(
-    results.map((result, i) =>
-      ({ content: `${bold(`${result.item.difficulties[0].name} (${i + 1}/${results.length})`)}\nScore: ${result.score}` })
-    ),
+    await createDatabaseGetEmbedList(results, interaction),
     interaction, 'reply')
 }
 

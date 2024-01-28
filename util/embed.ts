@@ -21,7 +21,8 @@ export function ccToLevel(songdata: SongDifficultyData) {
   }
 }
 
-export function createGenericEmbed(interaction: CommandInteraction): EmbedBuilder {
+export function createGenericEmbed(interaction?: CommandInteraction): EmbedBuilder {
+  if (!interaction) return new EmbedBuilder({ 'timestamp': new Date().toISOString() })
   return new EmbedBuilder({
     "author": {
       "name": interaction.client.user.username,
@@ -35,19 +36,19 @@ export function createGenericEmbed(interaction: CommandInteraction): EmbedBuilde
   })
 }
 
-export function createErrorEmbed(error: string, interaction: CommandInteraction) {
+export function createErrorEmbed(error: string, interaction?: CommandInteraction) {
   return createGenericEmbed(interaction)
     .setTitle("Error")
     .setDescription(error)
     .setColor(ERROR_COLOR)
 }
-export function createSuccessEmbed(title: string | null, interval: number | null, interaction: CommandInteraction) {
+export function createSuccessEmbed(title: string | null, interval: number | null, interaction?: CommandInteraction) {
   return createGenericEmbed(interaction)
     .setTitle(title ? title + (interval === null ? "" : ` (${interval / 1000}s)`) : null)
     .setColor(SUCCESS_COLOR)
 }
 
-export function createProcessEmbed(interval: number, score: number, difficulty: Difficulty, combo: number, interaction: CommandInteraction) {
+export function createProcessEmbed(interval: number, score: number, difficulty: Difficulty, combo: number, interaction?: CommandInteraction) {
   return createSuccessEmbed("Scorecard Processing Result", interval, interaction)
     .addFields({
       "name": `Score`,
@@ -65,7 +66,7 @@ export function createProcessEmbed(interval: number, score: number, difficulty: 
   // .setImage("attachment://scorecard.png")
 }
 
-export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction: CommandInteraction) {
+export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction?: CommandInteraction) {
   return createSuccessEmbed("Song Data", interval, interaction)
     .addFields({
       "name": `Song`,
@@ -85,7 +86,7 @@ ${bold('# Notes:')} ${songdata.notes}`,
     }).setThumbnail("attachment://jacket.png")
 }
 
-export async function createDatabaseGetEmbedList(songs: SongData[], interaction: CommandInteraction) {
+export async function createDatabaseGetEmbedList(songs: SongData[], interaction?: CommandInteraction) {
   const results: InteractionReplyOptions[] = []
   for (const song of songs) {
     const { difficulties, extra, id } = song
@@ -132,7 +133,7 @@ export async function createDatabaseGetEmbedList(songs: SongData[], interaction:
   return results;
 }
 
-export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction: CommandInteraction) {
+export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction?: CommandInteraction) {
   return createSuccessEmbed("Update Database", interval, interaction)
     .addFields({
       "name": `Song`,
@@ -152,7 +153,7 @@ ${bold('# Notes:')} ${songdata.notes}`,
     }).setThumbnail("attachment://jacket.png")
 }
 
-export function createSongAnalysisEmbed(analysis: ScoreAnalysis, interaction: CommandInteraction) {
+export function createSongAnalysisEmbed(analysis: ScoreAnalysis, interaction?: CommandInteraction) {
   const embed = createSuccessEmbed("Score Analysis", null, interaction)
     .addFields({
       "name": "Grade",
