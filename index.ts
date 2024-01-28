@@ -26,7 +26,7 @@ interface Event<N extends string = string> {
 
 // Create a new client instance
 const client: CustomClient = Object.assign<Client, Omit<CustomClient, keyof Client>>(
-  new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent] }),
+  new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions] }),
   {
     commands: new Collection(),
     db: setupDB(new Database({ tabSize: 2 }))

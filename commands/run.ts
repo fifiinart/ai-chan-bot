@@ -4,7 +4,7 @@ import axios from "axios";
 import { Stream } from "stream";
 import { OEM, PSM, createWorker } from "tesseract.js";
 import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, getSyncRegion, DIFF_REGION_V4, COMBO_REGION_V4 } from "../util/img-format-constants";
-import { getAttachmentsFromMessage } from "../util/get-attachments";
+import { getAttachmentsFromInteraction } from "../util/get-attachments";
 
 export const data = new SlashCommandBuilder()
   .setName('run')
@@ -19,7 +19,7 @@ const imageLinkRegex = /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|svg|PNG|JPG|
 
 export async function execute(interaction: CommandInteraction) {
 
-  const result = await getAttachmentsFromMessage(interaction);
+  const result = await getAttachmentsFromInteraction(interaction);
   if (!result.success) {
     interaction.reply(result.error);
     return;

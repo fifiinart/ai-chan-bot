@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
-import { getAttachmentsFromMessage } from "../util/get-attachments";
+import { getAttachmentsFromInteraction } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { compareJackets } from "../util/pixelmatch";
 import { CustomClient } from "..";
@@ -19,7 +19,7 @@ export async function execute(interaction: CommandInteraction) {
 
   let now = Date.now();
 
-  const result = await getAttachmentsFromMessage(interaction);
+  const result = await getAttachmentsFromInteraction(interaction);
   if (!result.success) {
     return await interaction.followUp({ embeds: [createErrorEmbed(result.error, interaction)] })
   }

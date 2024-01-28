@@ -15,7 +15,7 @@ export type RetrieveAttachmentResponse = RetrieveAttachmentSuccess | RetrieveAtt
 const relativeLinkRegex = /^[mM](\d+)$/
 const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S(?:png|jpg|jpeg|gif|svg))/gi
 
-export async function getAttachmentsFromMessage(interaction: CommandInteraction): Promise<RetrieveAttachmentResponse> {
+export async function getAttachmentsFromInteraction(interaction: CommandInteraction): Promise<RetrieveAttachmentResponse> {
   const link = (interaction.options as CommandInteractionOptionResolver).getString('image')?.trim()
   // TODO: find a way to act on an image that the user replies to
 
@@ -50,6 +50,20 @@ export async function getAttachmentsFromMessage(interaction: CommandInteraction)
     }
     attachments = matches
   }
+
+  if (attachments.length == 0) {
+    return { success: false, error: "No attachments found." }
+  }
+
+  console.log("Attachments found: " + attachments.length)
+  return { success: true, data: attachments }
+}
+
+export async function getAttachmentsFromMessage(message: Message): Promise<RetrieveAttachmentResponse> {
+  let attachments = [...message.attachments.mapValues(x => x.url).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
+  if (attachments.length > 0) await message.react('✅');
+  const matches = message.content.match(imageLinkRegex)
+  attachments.push(...(matches ?? []))
 
   if (attachments.length == 0) {
     return { success: false, error: "No attachments found." }

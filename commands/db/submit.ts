@@ -2,7 +2,7 @@ import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver
 import { CustomClient } from "../..";
 
 import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
-import { getAttachmentsFromMessage } from "../../util/get-attachments";
+import { getAttachmentsFromInteraction } from "../../util/get-attachments";
 import { processScorecard } from "../../util/process-scorecard";
 import { SongData, SongDifficultyData, SongExtraData } from "../../util/database";
 import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
@@ -108,7 +108,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
 
   await interaction.deferReply();
 
-  const result = await getAttachmentsFromMessage(interaction);
+  const result = await getAttachmentsFromInteraction(interaction);
   if (!result.success) {
     await interaction.followUp(result.error);
     return;
