@@ -5,6 +5,7 @@ import { compareJackets } from "../util/pixelmatch";
 import { CustomClient } from "..";
 import { createErrorEmbed, createProcessEmbed, createSongAnalysisEmbed, createSongDataEmbed } from "../util/embed";
 import { analyzeScore } from "../util/analyze-score";
+import { stitchMessages } from "../util/stitch-messages";
 export const data = new SlashCommandBuilder()
   .setName('process')
   .setDescription('Processes an Arcaea score screenshot.')
@@ -29,12 +30,11 @@ export async function execute(interaction: CommandInteraction) {
 
   const attachments = result.data;
 
-  for (const attachment of attachments) {
-
+  const replies: InteractionReplyOptions[] = await Promise.all(attachments.map(async attachment => {
     const processResult = await processScorecard(attachment);
 
     if (!processResult.success) {
-      return await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, interaction)] })
+      return { embeds: [createErrorEmbed(processResult.error, interaction)] }
     }
 
     const { interval } = processResult.time
@@ -56,12 +56,13 @@ export async function execute(interaction: CommandInteraction) {
       songEmbed = [createSongDataEmbed(song.difficulty, song.song.extra, Date.now() - startCompareTime, interaction), createSongAnalysisEmbed(analyzeScore(data.data, song), interaction)]
     }
 
-    const replyContent: InteractionReplyOptions = {
+    return {
       files: files.map(([name, file]) => new AttachmentBuilder(file, { name: name + '.png' })),
       embeds: [createProcessEmbed(interval, score, difficulty, combo, interaction), ...songEmbed]
     };
-    await interaction.followUp(replyContent)
-  }
+  }))
+
+  stitchMessages(replies, interaction, 'followUp');
 
 }
 
