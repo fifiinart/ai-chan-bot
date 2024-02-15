@@ -13,7 +13,7 @@ export interface RetrieveAttachmentFailure {
 export type RetrieveAttachmentResponse = RetrieveAttachmentSuccess | RetrieveAttachmentFailure
 
 const relativeLinkRegex = /^[mM](\d+)$/
-const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S(?:png|jpg|jpeg|gif|svg))/gi
+const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S(?:png|jpg|jpeg|gif|svg))([\\?&]([^&=]+)=([^&=\s]+))*/gi // match query url params for new discord expiration
 
 export async function getAttachmentsFromInteraction(interaction: CommandInteraction): Promise<RetrieveAttachmentResponse> {
   const link = (interaction.options as CommandInteractionOptionResolver).getString('image')?.trim()
@@ -40,7 +40,7 @@ export async function getAttachmentsFromInteraction(interaction: CommandInteract
       return { success: false, error: "Message not found." }
     }
 
-    attachments = [...message.attachments.mapValues(x => x.url).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
+    attachments = [...message.attachments.mapValues(x => x.proxyURL).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
     if (attachments.length > 0) message.react('✅');
 
   } else {
@@ -60,7 +60,7 @@ export async function getAttachmentsFromInteraction(interaction: CommandInteract
 }
 
 export async function getAttachmentsFromMessage(message: Message): Promise<RetrieveAttachmentResponse> {
-  let attachments = [...message.attachments.mapValues(x => x.url).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
+  let attachments = [...message.attachments.mapValues(x => x.proxyURL).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
   if (attachments.length > 0) await message.react('✅');
   const matches = message.content.match(imageLinkRegex)
   attachments.push(...(matches ?? []))
