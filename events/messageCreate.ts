@@ -1,4 +1,4 @@
-import { EmbedBuilder, Events, GuildMember, Message, MessageReaction, MessageReplyOptions, ReactionEmoji, User, isJSONEncodable } from "discord.js";
+import { Attachment, AttachmentBuilder, EmbedBuilder, Events, GuildMember, Message, MessageReaction, MessageReplyOptions, ReactionEmoji, User, isJSONEncodable } from "discord.js";
 import type { CustomClient } from ".."
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
@@ -35,6 +35,7 @@ async function tryAutoProcess(message: Message, user: User | GuildMember) {
     const processResult = await processScorecard(attachment);
 
     let embeds: EmbedBuilder[];
+    let files: AttachmentBuilder[] = [];
     if (!processResult.success) {
       embeds = [createErrorEmbed(processResult.error, user)];
     } else {
@@ -47,13 +48,17 @@ async function tryAutoProcess(message: Message, user: User | GuildMember) {
       if (!song.difficulty) {
         embeds = [createErrorEmbed("Song not found.", user)];
       }
-      else embeds = [createProcessEmbed(interval, score, difficulty, combo, user), createSongAnalysisEmbed(analyzeScore(data.data, song), user)];
+      else {
+        embeds = [createProcessEmbed(interval, score, difficulty, combo, user).setThumbnail("attachment://jacket.png"), createSongAnalysisEmbed(analyzeScore(data.data, song), user)];
+        files = [new AttachmentBuilder(data.files.jacket, { name: "jacket.png" })]
+      }
     }
 
     return {
       embeds,
-      allowedMentions: { repliedUser: false }
-    };
+      allowedMentions: { repliedUser: false },
+      files
+    } as MessageReplyOptions & { embeds: EmbedBuilder[] };
   }));
 
   if (replies.every(embedsHaveErrors)) {
@@ -61,18 +66,13 @@ async function tryAutoProcess(message: Message, user: User | GuildMember) {
   }
 
   if (replies.length > 1) {
-    replies.forEach((r, i) => r.embeds[0] = r.embeds[0].setTitle(`(${i + 1}/${replies.length})`))
+    replies.forEach((r, i) => r.embeds[0] = r.embeds[0].setTitle(r.embeds[0].data.title + ` (${i + 1}/${replies.length})`))
   }
 
   await collectReactions(message, replies);
 }
 
-async function collectReactions(message: Message<boolean>, replies: {
-  embeds: EmbedBuilder[];
-  allowedMentions: {
-    repliedUser: boolean;
-  };
-}[]) {
+async function collectReactions(message: Message<boolean>, replies: (MessageReplyOptions & { embeds: EmbedBuilder[] })[]) {
   const reaction = await message.react('💬');
 
   console.log("Reaction collector created");
@@ -85,7 +85,7 @@ async function collectReactions(message: Message<boolean>, replies: {
     console.log(reaction.emoji.name, user.displayName);
     if (reaction.emoji.name === '💬') {
       console.log("Reaction collected");
-      stitchMessages(replies.map(r => ({ ...r, embeds: r.embeds.map(e => replaceUser(e, user)) })), async (x) => message.reply(x));
+      stitchMessages(replies.map(r => ({ ...r, embeds: r.embeds.map(e => replaceUser(e as EmbedBuilder, user)) })), async (x) => message.reply(x));
       collector.stop();
     }
   });
