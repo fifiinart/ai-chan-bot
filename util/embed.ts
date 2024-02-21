@@ -1,4 +1,4 @@
-import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold } from "discord.js";
+import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, EmbedData, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold } from "discord.js";
 import { Difficulty, getDifficultyName } from "./img-format-constants";
 import { SongData, SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";
@@ -38,6 +38,13 @@ export function createGenericEmbed(user?: User | GuildMember): EmbedBuilder {
     },
     "timestamp": new Date().toISOString()
   })
+}
+
+export function replaceUser(embed: EmbedBuilder, user: User | GuildMember | undefined) {
+  return embed.setFooter(user ? {
+    text: `Requested by ${(user instanceof GuildMember && user.nickname) || user.displayName}`,
+    iconURL: user.displayAvatarURL()
+  } : null)
 }
 
 export function createErrorEmbed(error: string, user?: User | GuildMember) {

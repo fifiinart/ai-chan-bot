@@ -3,7 +3,7 @@ import type { CustomClient } from ".."
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { analyzeScore } from "../util/analyze-score";
-import { createSongAnalysisEmbed, createProcessEmbed, createErrorEmbed } from "../util/embed";
+import { createSongAnalysisEmbed, createProcessEmbed, createErrorEmbed, replaceUser } from "../util/embed";
 import { compareJackets } from "../util/pixelmatch";
 import 'dotenv/config'
 import { stitchMessages } from "../util/stitch-messages";
@@ -53,30 +53,39 @@ async function tryAutoProcess(message: Message, user: User | GuildMember) {
     return {
       embeds,
       allowedMentions: { repliedUser: false }
-    } as MessageReplyOptions;
+    };
   }));
 
   if (replies.every(embedsHaveErrors)) {
     return;
   }
 
+  if (replies.length > 1) {
+    replies.forEach((r, i) => r.embeds[0] = r.embeds[0].setTitle(`(${i + 1}/${replies.length})`))
+  }
+
   await collectReactions(message, replies);
 }
 
-async function collectReactions(message: Message<boolean>, replies: MessageReplyOptions[]) {
+async function collectReactions(message: Message<boolean>, replies: {
+  embeds: EmbedBuilder[];
+  allowedMentions: {
+    repliedUser: boolean;
+  };
+}[]) {
   const reaction = await message.react('💬');
 
   console.log("Reaction collector created");
   const collector = message.createReactionCollector({
     time: 60000,
-    filter: () => true
+    filter: (reaction: MessageReaction, user: User) => !user.bot
   });
 
   collector.on('collect', (reaction: MessageReaction, user: User) => {
     console.log(reaction.emoji.name, user.displayName);
     if (reaction.emoji.name === '💬') {
       console.log("Reaction collected");
-      stitchMessages(replies, async (x) => message.reply(x));
+      stitchMessages(replies.map(r => ({ ...r, embeds: r.embeds.map(e => replaceUser(e, user)) })), async (x) => message.reply(x));
       collector.stop();
     }
   });

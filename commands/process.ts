@@ -32,7 +32,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const attachments = result.data;
 
-  const replies: InteractionReplyOptions[] = await Promise.all(attachments.map(async attachment => {
+  const replies = await Promise.all(attachments.map(async attachment => {
     const processResult = await processScorecard(attachment);
 
     if (!processResult.success) {
@@ -63,6 +63,10 @@ export async function execute(interaction: CommandInteraction) {
       embeds: [createProcessEmbed(interval, score, difficulty, combo, user), ...songEmbed]
     };
   }))
+
+  if (replies.length > 1) {
+    replies.forEach((r, i) => r.embeds[0].setTitle(`(${i + 1}/${replies.length})`))
+  }
 
   stitchMessages(replies, x => interaction.followUp(x), interaction.user);
 
