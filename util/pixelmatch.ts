@@ -2,7 +2,7 @@ import pixelmatch from "pixelmatch";
 import sharp from "sharp";
 import { SongData, SongDifficultyData } from "./database";
 import SimplDB from "simpl.db";
-import { Difficulty, JACKET_RESOLUTION, getJacketPath } from "./img-format-constants";
+import { Difficulty, JACKET_RESOLUTION, getJacketPath } from "./process-image";
 
 export interface TotalDifficultyData {
   difficulty: SongDifficultyData

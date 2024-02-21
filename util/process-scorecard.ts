@@ -2,7 +2,7 @@ import axios from "axios";
 import sharp from "sharp";
 import { Stream } from "stream";
 import { createWorker, createScheduler, OEM, PSM } from "tesseract.js";
-import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat, JACKET_RESOLUTION } from "./img-format-constants";
+import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat, JACKET_RESOLUTION } from "./process-image";
 import { codeBlock, inlineCode } from "discord.js";
 
 export interface Score {
@@ -67,8 +67,16 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   // jacket = sharp(await jacket.toBuffer()).resize(JACKET_RESOLUTION).ensureAlpha().png()
 
   let composed: sharp.Sharp, colored;
-  ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));
-  console.log("Extract and process image: %ds", -(now - Date.now()) / 1000)
+  try {
+    ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));
+  } catch (e) {
+    return {
+      success: false,
+      error: (e as Error).message
+    }
+  } finally {
+    console.log("Extract and process image: %ds", -(now - Date.now()) / 1000)
+  }
   now = Date.now()
 
   const normalWorker = await createWorker("eng", OEM.TESSERACT_ONLY, {

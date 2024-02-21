@@ -1,5 +1,5 @@
 import { Database } from "simpl.db";
-import { Difficulty } from "./img-format-constants";
+import { Difficulty } from "./process-image";
 
 export interface SongDifficultyData {
   subid?: string,

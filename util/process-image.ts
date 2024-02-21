@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import {
   analyzeLabels, connectedComponents, labelResultsToImg, processFromLabelData, sharpToMatrix
-} from "../util/connected-components";
+} from "./connected-components";
 import path from "path";
 
 export const MULT = 1 / 2;

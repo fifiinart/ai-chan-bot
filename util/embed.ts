@@ -1,5 +1,5 @@
 import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, EmbedData, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold } from "discord.js";
-import { Difficulty, getDifficultyName } from "./img-format-constants";
+import { Difficulty, getDifficultyName } from "./process-image";
 import { SongData, SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";
 import { groupBy } from "./array-group";

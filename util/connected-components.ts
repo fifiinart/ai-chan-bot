@@ -174,6 +174,9 @@ export function labelResultsToImg(labels: number[][]) {
 export function processFromLabelData(dataList: LabelData[]) {
   const MARGIN = 5
   const filtered = dataList.slice(1).filter(({ yMax }) => yMax > 15)
+
+  if (filtered.length === 0) throw new Error("Invalid image (no labels detected to arrange).")
+
   const maxHeight = Math.max(...filtered.map(x => x.yMax - x.yMin + 1))
 
   const marginColumns = Array<number[]>(maxHeight + MARGIN * 2).fill([]).map(_ => Array<number>(MARGIN).fill(0))

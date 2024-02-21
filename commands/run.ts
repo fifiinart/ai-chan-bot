@@ -3,7 +3,7 @@ import sharp from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
 import { OEM, PSM, createWorker } from "tesseract.js";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, getSyncRegion, DIFF_REGION_V4, COMBO_REGION_V4 } from "../util/img-format-constants";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, getSyncRegion, DIFF_REGION_V4, COMBO_REGION_V4 } from "../util/process-image";
 import { getAttachmentsFromInteraction } from "../util/get-attachments";
 
 export const data = new SlashCommandBuilder()

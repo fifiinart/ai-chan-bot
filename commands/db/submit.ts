@@ -1,7 +1,7 @@
 import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType } from "discord.js";
 import { CustomClient } from "../.."
 
-import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
+import { Difficulty, JACKET_RESOLUTION } from "../../util/process-image";
 import { getAttachmentsFromInteraction } from "../../util/get-attachments";
 import { processScorecard } from "../../util/process-scorecard";
 import { SongData, SongDifficultyData, SongExtraData } from "../../util/database";
