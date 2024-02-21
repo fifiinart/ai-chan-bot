@@ -13,7 +13,7 @@ export interface RetrieveAttachmentFailure {
 export type RetrieveAttachmentResponse = RetrieveAttachmentSuccess | RetrieveAttachmentFailure
 
 const relativeLinkRegex = /^[mM](\d+)$/
-const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S(?:png|jpg|jpeg|gif|svg))([\\?&]([^&=]+)=([^&=\s]+))*/gi // match query url params for new discord expiration
+const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S(?:png|jpg|jpeg|gif|svg))([\\?&]([^&=\s]+)=([^&=\s]+))*/gi // match query url params for new discord expiration
 
 export async function getAttachmentsFromInteraction(interaction: CommandInteraction): Promise<RetrieveAttachmentResponse> {
   const link = (interaction.options as CommandInteractionOptionResolver).getString('image')?.trim()
