@@ -60,15 +60,16 @@ export async function getAttachmentsFromInteraction(interaction: CommandInteract
 }
 
 export async function getAttachmentsFromMessage(message: Message): Promise<RetrieveAttachmentResponse> {
-  let attachments = [...message.attachments.mapValues(x => x.proxyURL).values(), message.content].flatMap(att => att.match(imageLinkRegex) ?? [])
-  if (attachments.length > 0) await message.react('✅');
-  const matches = message.content.match(imageLinkRegex)
-  attachments.push(...(matches ?? []))
+  let attachments = [
+    ...message.attachments.mapValues(x => x.proxyURL).values(),
+    message.content
+  ].flatMap(att => att.match(imageLinkRegex) ?? [])
 
   if (attachments.length == 0) {
     return { success: false, error: "No attachments found." }
   }
 
+  await message.react('✅');
   console.log("Attachments found: " + attachments.length)
   return { success: true, data: attachments }
 }
