@@ -1,7 +1,7 @@
 import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, type SlashCommandSubcommandsOnlyBuilder, AutocompleteInteraction } from "discord.js";
-import { createErrorEmbed } from "../util/embed";
+import { createErrorEmbed, interactionMemberToMemberOrUser } from "../util/embed";
 import path from "path";
-import type { CommandLike } from "..";
+import type { CommandLike } from ".."
 import fs from "fs"
 
 let data: SlashCommandSubcommandsOnlyBuilder = new SlashCommandBuilder()
@@ -51,7 +51,7 @@ async function execute(interaction: CommandInteraction) {
   if (subcommands.has(subcommand)) {
     return subcommands.get(subcommand)!.execute(interaction)
   }
-  await interaction.reply({ embeds: [createErrorEmbed(`Subcommand ${inlineCode(subcommand)} or group ${inlineCode(group ?? 'N/A')} not found in command ${inlineCode(data.name)}.`, interaction)] })
+  await interaction.reply({ embeds: [createErrorEmbed(`Subcommand ${inlineCode(subcommand)} or group ${inlineCode(group ?? 'N/A')} not found in command ${inlineCode(data.name)}.`, interactionMemberToMemberOrUser(interaction.member))] })
 }
 
 async function autocomplete(interaction: AutocompleteInteraction) {

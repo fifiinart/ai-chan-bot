@@ -1,11 +1,11 @@
 import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType } from "discord.js";
-import { CustomClient } from "../..";
+import { CustomClient } from "../.."
 
 import { Difficulty, JACKET_RESOLUTION } from "../../util/img-format-constants";
 import { getAttachmentsFromInteraction } from "../../util/get-attachments";
 import { processScorecard } from "../../util/process-scorecard";
 import { SongData, SongDifficultyData, SongExtraData } from "../../util/database";
-import { createErrorEmbed, createUpdateDatabaseEmbed } from "../../util/embed";
+import { createErrorEmbed, createUpdateDatabaseEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 
 import fs from "fs/promises"
 import path from "path";
@@ -83,7 +83,9 @@ export const data = new SlashCommandSubcommandBuilder()
 
 export async function execute(interaction: CommandInteraction): Promise<void> {
 
-  if ((![process.env.GUILD_ID, process.env.GUILD_ID_2].includes(interaction.guild?.id)) && (interaction.member?.user.id !== process.env.OWNER_ID)) {
+  const user = interactionMemberToMemberOrUser(interaction.member)
+
+  if ((![process.env.GUILD_ID, process.env.GUILD_ID_2].includes(interaction.guild?.id)) && (user?.id !== process.env.OWNER_ID)) {
     await interaction.reply("Only the owner or members of trusted guilds can submit information!");
     return;
   }
@@ -119,7 +121,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
   const attachments = result.data;
 
   if (attachments.length > 1) {
-    await interaction.followUp({ embeds: [createErrorEmbed("Multiple images received", interaction)] })
+    await interaction.followUp({ embeds: [createErrorEmbed("Multiple images received", user)] })
     return;
   }
 
@@ -128,7 +130,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
   const processResult = await processScorecard(attachment);
 
   if (!processResult.success) {
-    await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, interaction)] });
+    await interaction.followUp({ embeds: [createErrorEmbed(processResult.error, user)] });
     return;
   }
 
@@ -165,7 +167,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
     }, target => target.id === id)
 
     if (!undoMethod || !songdata) {
-      await interaction.followUp({ embeds: [createErrorEmbed("Something went wrong!", interaction)] });
+      await interaction.followUp({ embeds: [createErrorEmbed("Something went wrong!", user)] });
       return;
     }
 
@@ -196,7 +198,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
 
   const response = await interaction.followUp({
     files: [new AttachmentBuilder(jacket, { name: "jacket.png" })],
-    embeds: [createUpdateDatabaseEmbed(id, difficultyData, extraData, Date.now() - now, interaction)],
+    embeds: [createUpdateDatabaseEmbed(id, difficultyData, extraData, Date.now() - now, user)],
     components: [row]
   })
 
@@ -213,7 +215,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
         await fs.rm(jacketPath)
       }
       confirmation.update({
-        embeds: [createErrorEmbed("Database Restored", interaction)],
+        embeds: [createErrorEmbed("Database Restored", user)],
         files: [],
         components: []
       })

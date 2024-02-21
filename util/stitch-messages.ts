@@ -1,14 +1,11 @@
-import { ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, CommandInteraction, ComponentType, InteractionReplyOptions, InteractionResponse, Message } from "discord.js";
+import { ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, ComponentType, InteractionReplyOptions, InteractionResponse, Message, MessageReplyOptions, User } from "discord.js";
 
 const setDisabledAll = (buttons: ButtonBuilder[]) => (disabled: boolean[]) => buttons.forEach((b, i) => b.setDisabled(disabled[i]))
 
-export async function stitchMessages(messages: readonly BaseMessageOptions[], interaction: CommandInteraction, action: 'reply'): Promise<InteractionResponse>
-export async function stitchMessages(messages: readonly BaseMessageOptions[], interaction: CommandInteraction, action: 'followUp'): Promise<Message>
-export async function stitchMessages(messages: readonly BaseMessageOptions[], interaction: CommandInteraction, action: 'editReply'): Promise<Message>
-export async function stitchMessages(messages: readonly BaseMessageOptions[], interaction: CommandInteraction, action: 'reply' | 'followUp' | 'editReply') {
+export async function stitchMessages(messages: readonly BaseMessageOptions[], action: (options: BaseMessageOptions) => Promise<Message> | Promise<InteractionResponse>, user?: User) {
 
   if (messages.length === 1) {
-    return await interaction[action](messages[0])
+    return await action(messages[0])
   }
 
   let index = 0;
@@ -38,12 +35,12 @@ export async function stitchMessages(messages: readonly BaseMessageOptions[], in
   const row = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(buttons)
 
-  const response = await interaction[action]({ ...messages[index], components: [row] } as InteractionReplyOptions)
+  const response = await action({ ...messages[index], components: [row, ...messages[index].components ?? []] })
 
   const collector = response.createMessageComponentCollector({
     componentType: ComponentType.Button,
     idle: 5 * 60 * 1000,
-    filter: btnInt => btnInt.user.id === interaction.user.id
+    filter: btnInt => user === undefined || btnInt.user.id === user.id
   })
 
   collector.on("collect", async collected => {

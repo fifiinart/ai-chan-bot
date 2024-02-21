@@ -1,9 +1,9 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember } from "discord.js";
 import { getAttachmentsFromInteraction } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { compareJackets } from "../util/pixelmatch";
 import { CustomClient } from "..";
-import { createErrorEmbed, createProcessEmbed, createSongAnalysisEmbed, createSongDataEmbed } from "../util/embed";
+import { createErrorEmbed, createProcessEmbed, createSongAnalysisEmbed, createSongDataEmbed, interactionMemberToMemberOrUser } from "../util/embed";
 import { analyzeScore } from "../util/analyze-score";
 import { stitchMessages } from "../util/stitch-messages";
 export const data = new SlashCommandBuilder()
@@ -16,13 +16,15 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
 
+  const user = interactionMemberToMemberOrUser(interaction.member)
+
   await interaction.deferReply();
 
   let now = Date.now();
 
   const result = await getAttachmentsFromInteraction(interaction);
   if (!result.success) {
-    return await interaction.followUp({ embeds: [createErrorEmbed(result.error, interaction)] })
+    return await interaction.followUp({ embeds: [createErrorEmbed(result.error, user)] })
   }
 
   console.log("Get attachments: %ds", -(now - Date.now()) / 1000)
@@ -34,7 +36,7 @@ export async function execute(interaction: CommandInteraction) {
     const processResult = await processScorecard(attachment);
 
     if (!processResult.success) {
-      return { embeds: [createErrorEmbed(processResult.error, interaction)] }
+      return { embeds: [createErrorEmbed(processResult.error, user)] }
     }
 
     const { interval } = processResult.time
@@ -50,19 +52,19 @@ export async function execute(interaction: CommandInteraction) {
     const startCompareTime = Date.now()
     const song = await compareJackets(difficulty, (interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
     if (!song.difficulty) {
-      songEmbed = [createErrorEmbed("Song not found.", interaction)]
+      songEmbed = [createErrorEmbed("Song not found.", user)]
     }
     else {
-      songEmbed = [createSongDataEmbed(song.difficulty, song.song.extra, Date.now() - startCompareTime, interaction), createSongAnalysisEmbed(analyzeScore(data.data, song), interaction)]
+      songEmbed = [createSongDataEmbed(song.difficulty, song.song.extra, Date.now() - startCompareTime, user), createSongAnalysisEmbed(analyzeScore(data.data, song), user)]
     }
 
     return {
       files: files.map(([name, file]) => new AttachmentBuilder(file, { name: name + '.png' })),
-      embeds: [createProcessEmbed(interval, score, difficulty, combo, interaction), ...songEmbed]
+      embeds: [createProcessEmbed(interval, score, difficulty, combo, user), ...songEmbed]
     };
   }))
 
-  stitchMessages(replies, interaction, 'followUp');
+  stitchMessages(replies, x => interaction.followUp(x), interaction.user);
 
 }
 

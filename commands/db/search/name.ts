@@ -1,7 +1,7 @@
-import { AutocompleteInteraction, BaseInteraction, CommandInteraction, SlashCommandSubcommandBuilder, bold } from "discord.js";
+import { AutocompleteInteraction, BaseInteraction, CommandInteraction, GuildMember, SlashCommandSubcommandBuilder, bold } from "discord.js";
 import type { CustomClient } from "../../.."
 import { stitchMessages } from "../../../util/stitch-messages";
-import { createDatabaseGetEmbedList, createErrorEmbed } from "../../../util/embed";
+import { createDatabaseGetEmbedList, createErrorEmbed, interactionMemberToMemberOrUser } from "../../../util/embed";
 import { initializeFuse, searchSongdata } from "../../../util/search";
 
 export const data = new SlashCommandSubcommandBuilder()
@@ -22,6 +22,8 @@ export const data = new SlashCommandSubcommandBuilder()
       { name: "Beyond", value: "3" }).setRequired(false))
 
 export async function execute(interaction: CommandInteraction) {
+  const user = interactionMemberToMemberOrUser(interaction.member)
+
   const nameQuery = interaction.options.get('name', true).value as string
   const difficultyQuery = interaction.options.get('difficulty')
 
@@ -36,12 +38,12 @@ export async function execute(interaction: CommandInteraction) {
 
 
   if (results.length === 0) {
-    return await interaction.reply({ embeds: [createErrorEmbed("No Matches Found", interaction)] })
+    return await interaction.reply({ embeds: [createErrorEmbed("No Matches Found", user)] })
   }
 
   return stitchMessages(
-    await createDatabaseGetEmbedList(results, interaction),
-    interaction, 'reply')
+    await createDatabaseGetEmbedList(results, user),
+    x => interaction.reply(x), interaction.user)
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {

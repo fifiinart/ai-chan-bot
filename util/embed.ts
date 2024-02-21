@@ -1,4 +1,4 @@
-import { APIEmbed, AttachmentBuilder, CommandInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, JSONEncodable, bold } from "discord.js";
+import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold } from "discord.js";
 import { Difficulty, getDifficultyName } from "./img-format-constants";
 import { SongData, SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";
@@ -21,35 +21,39 @@ export function ccToLevel(songdata: SongDifficultyData) {
   }
 }
 
-export function createGenericEmbed(interaction?: CommandInteraction): EmbedBuilder {
-  if (!interaction) return new EmbedBuilder({ 'timestamp': new Date().toISOString() })
+export function interactionMemberToMemberOrUser(interactionMember: CommandInteraction["member"]) {
+  return interactionMember instanceof GuildMember ? interactionMember : undefined
+}
+
+export function createGenericEmbed(user?: User | GuildMember): EmbedBuilder {
+  if (!user) return new EmbedBuilder({ 'timestamp': new Date().toISOString() })
   return new EmbedBuilder({
     "author": {
-      "name": interaction.client.user.username,
-      "icon_url": interaction.client.user.displayAvatarURL()
+      "name": user.client.user.username,
+      "icon_url": user.client.user.displayAvatarURL()
     },
     "footer": {
-      "text": `Requested by ${interaction.member?.user.username}`,
-      "icon_url": interaction.member instanceof GuildMember ? interaction.member.displayAvatarURL() : undefined
+      "text": `Requested by ${(user instanceof GuildMember && user.nickname) || user.displayName}`,
+      "icon_url": user.displayAvatarURL()
     },
     "timestamp": new Date().toISOString()
   })
 }
 
-export function createErrorEmbed(error: string, interaction?: CommandInteraction) {
-  return createGenericEmbed(interaction)
+export function createErrorEmbed(error: string, user?: User | GuildMember) {
+  return createGenericEmbed(user)
     .setTitle("Error")
     .setDescription(error)
     .setColor(ERROR_COLOR)
 }
-export function createSuccessEmbed(title: string | null, interval: number | null, interaction?: CommandInteraction) {
-  return createGenericEmbed(interaction)
+export function createSuccessEmbed(title: string | null, interval: number | null, user?: User | GuildMember) {
+  return createGenericEmbed(user)
     .setTitle(title ? title + (interval === null ? "" : ` (${interval / 1000}s)`) : null)
     .setColor(SUCCESS_COLOR)
 }
 
-export function createProcessEmbed(interval: number, score: number, difficulty: Difficulty, combo: number, interaction?: CommandInteraction) {
-  return createSuccessEmbed("Scorecard Processing Result", interval, interaction)
+export function createProcessEmbed(interval: number, score: number, difficulty: Difficulty, combo: number, user?: User | GuildMember) {
+  return createSuccessEmbed("Scorecard Processing Result", interval, user)
     .addFields({
       "name": `Score`,
       "value": `${score.toString().padStart(8, '0')}`,
@@ -66,8 +70,8 @@ export function createProcessEmbed(interval: number, score: number, difficulty: 
   // .setImage("attachment://scorecard.png")
 }
 
-export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction?: CommandInteraction) {
-  return createSuccessEmbed("Song Data", interval, interaction)
+export function createSongDataEmbed(songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, user?: User | GuildMember) {
+  return createSuccessEmbed("Song Data", interval, user)
     .addFields({
       "name": `Song`,
       "value": `${songdata.name}
@@ -86,20 +90,20 @@ ${bold('# Notes:')} ${songdata.notes}`,
     }).setThumbnail("attachment://jacket.png")
 }
 
-export async function createDatabaseGetEmbedList(songs: SongData[], interaction?: CommandInteraction) {
+export async function createDatabaseGetEmbedList(songs: SongData[], user?: User | GuildMember) {
   const results: InteractionReplyOptions[] = []
   for (const song of songs) {
     const { difficulties, extra, id } = song
     results.push(...await Promise.all(Object.entries(groupBy(difficulties, "name")).map(async ([name, sharedName]) => {
       const embeds = [
-        createSuccessEmbed("Database Search Result", null, interaction)
+        createSuccessEmbed("Database Search Result", null, user)
           .addFields({
             "name": `Song`,
             "value": `${name}
         ${bold('Pack:')} ${extra.pack.base} ${extra.pack.subpack ? "| " + extra.pack.subpack : ""}`
           }),
         ...sharedName.map(difficulty => {
-          return createSuccessEmbed(null, null, interaction)
+          return createSuccessEmbed(null, null, user)
             .addFields({
               "name": `Difficulty`,
               "value": `${bold('Level:')} ${getDifficultyName(difficulty.difficulty)} ${ccToLevel(difficulty)}
@@ -133,8 +137,8 @@ export async function createDatabaseGetEmbedList(songs: SongData[], interaction?
   return results;
 }
 
-export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, interaction?: CommandInteraction) {
-  return createSuccessEmbed("Update Database", interval, interaction)
+export function createUpdateDatabaseEmbed(id: string, songdata: SongDifficultyData, extra: SongExtraData, interval: number | null, user?: User | GuildMember) {
+  return createSuccessEmbed("Update Database", interval, user)
     .addFields({
       "name": `Song`,
       "value": `${songdata.name} (\`${id}\`)
@@ -153,8 +157,8 @@ ${bold('# Notes:')} ${songdata.notes}`,
     }).setThumbnail("attachment://jacket.png")
 }
 
-export function createSongAnalysisEmbed(analysis: ScoreAnalysis, interaction?: CommandInteraction) {
-  const embed = createSuccessEmbed("Score Analysis", null, interaction)
+export function createSongAnalysisEmbed(analysis: ScoreAnalysis, user?: User | GuildMember) {
+  const embed = createSuccessEmbed("Score Analysis", null, user)
     .addFields({
       "name": "Grade",
       "value": analysis.grade,
