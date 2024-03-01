@@ -78,7 +78,7 @@ export const data = new SlashCommandSubcommandBuilder()
 
   .addStringOption(opt => opt
     .setName('level').setDescription('The custom display level (dropdead FTR 8 - CC 9.1, etc.). Leave blank if consistent with CC.').setRequired(false)
-    .setChoices(...['1', '2', '3', '4', '5', '6', '7', '8', '9', '9+', '10', '10+', '11', '11+', '12'].map(x => ({ name: x, value: x }))))
+    .setChoices(...['1', '2', '3', '4', '5', '6', '7', '7+', '8', '8+', '9', '9+', '10', '10+', '11', '11+', '12'].map(x => ({ name: x, value: x }))))
   .addStringOption(opt => opt
     .setName('charter').setDescription('The charter name as listed, for that difficulty.').setRequired(false))
 
