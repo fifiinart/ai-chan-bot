@@ -137,10 +137,10 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   now = Date.now()
 
   let difficulty: Difficulty, combo: number, version: ScorecardFormat
-  if ((["PAST", "PRESENT", "FUTURE", "BEYOND"]).includes(diff5) && !Number.isNaN(+combo5) && scoreFormat.test(score)) {
+  if ((["PAST", "PRESENT", "FUTURE", "BEYOND", "ETERNAL"]).includes(diff5) && !Number.isNaN(+combo5) && scoreFormat.test(score)) {
     version = ScorecardFormat.GTE_V5;
     console.log("5.0 Score detected")
-    switch (diff5 as ("PAST" | "PRESENT" | "FUTURE" | "BEYOND")) {
+    switch (diff5 as ("PAST" | "PRESENT" | "FUTURE" | "BEYOND" | "ETERNAL")) {
       case "PAST":
         difficulty = Difficulty.PAST;
         break;
@@ -152,6 +152,10 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
         break;
       case "BEYOND":
         difficulty = Difficulty.BEYOND;
+        break;
+      case "ETERNAL":
+        difficulty = Difficulty.ETERNAL;
+        break;
     }
     combo = +combo5
   } else if (["Past", "Present", "Future", "Beyond"].some(x => diff4.startsWith(x)) && !Number.isNaN(+combo4) && scoreFormat.test(score)) {

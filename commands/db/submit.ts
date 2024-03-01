@@ -52,7 +52,8 @@ export const data = new SlashCommandSubcommandBuilder()
       { name: "Past", value: "0" },
       { name: "Present", value: "1" },
       { name: "Future", value: "2" },
-      { name: "Beyond", value: "3" }).setRequired(true))
+      { name: "Beyond", value: "3" },
+      { name: 'Eternal', value: "4" }).setRequired(true))
   .addStringOption(opt => opt
     .setName('song').setDescription('The song name.').setRequired(true))
   .addStringOption(opt => opt

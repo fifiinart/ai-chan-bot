@@ -26,7 +26,8 @@ export enum Difficulty {
   PAST,
   PRESENT,
   FUTURE,
-  BEYOND
+  BEYOND,
+  ETERNAL
 }
 
 export const getDifficultyName = (diff: Difficulty): string => ["Past", "Present", "Future", "Beyond"][diff]

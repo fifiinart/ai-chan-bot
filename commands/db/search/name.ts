@@ -19,7 +19,8 @@ export const data = new SlashCommandSubcommandBuilder()
       { name: "Past", value: "0" },
       { name: "Present", value: "1" },
       { name: "Future", value: "2" },
-      { name: "Beyond", value: "3" }).setRequired(false))
+      { name: "Beyond", value: "3" },
+      { name: 'Eternal', value: "4" }).setRequired(false))
 
 export async function execute(interaction: CommandInteraction) {
   const user = interactionMemberToMemberOrUser(interaction.member)
