@@ -6,6 +6,7 @@ import { CustomClient } from "..";
 import { createErrorEmbed, createProcessEmbed, createSongAnalysisEmbed, createSongDataEmbed, interactionMemberToMemberOrUser } from "../util/embed";
 import { analyzeScore } from "../util/analyze-score";
 import { stitchMessages } from "../util/stitch-messages";
+export const isGuildOnly = true;
 export const data = new SlashCommandBuilder()
   .setName('process')
   .setDescription('Processes an Arcaea score screenshot.')
