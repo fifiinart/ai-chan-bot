@@ -39,7 +39,7 @@ module.exports = {
   async execute(interaction: CommandInteraction) {
     const user = interactionMemberToMemberOrUser(interaction.member)
 
-    if (interaction.member?.user.id !== process.env.OWNER_ID)
+    if (interaction.user.id !== process.env.OWNER_ID)
       return await interaction.reply("Only the owner of the bot can reload a command!")
 
     const commandName = (interaction.options as CommandInteractionOptionResolver).getString('command', true).toLowerCase();
