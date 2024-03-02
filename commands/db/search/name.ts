@@ -2,7 +2,7 @@ import { AutocompleteInteraction, BaseInteraction, CommandInteraction, GuildMemb
 import type { CustomClient } from "../../.."
 import { stitchMessages } from "../../../util/stitch-messages";
 import { createDatabaseGetEmbedList, createErrorEmbed, interactionMemberToMemberOrUser } from "../../../util/embed";
-import { initializeFuse, searchSongdata } from "../../../util/search";
+import { searchSongdata } from "../../../util/search";
 
 export const data = new SlashCommandSubcommandBuilder()
   .setName('name')
