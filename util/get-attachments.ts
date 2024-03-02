@@ -1,4 +1,4 @@
-import { CommandInteraction, CommandInteractionOptionResolver, Message } from "discord.js"
+import { CommandInteraction, CommandInteractionOptionResolver, DMChannel, Message } from "discord.js"
 
 export interface RetrieveAttachmentSuccess {
   success: true,
@@ -22,7 +22,9 @@ export async function getAttachmentsFromInteraction(interaction: CommandInteract
   let attachments: string[]
   if ((link === undefined) || (relativeLinkRegex.test(link))) {
     const scrapeDist = link ? parseInt(link.substring(1)) : 1
-    const messages = await interaction.channel?.messages.fetch()!
+
+    const channel = interaction.channel ?? (await interaction.client.channels.fetch(interaction.channelId) as (DMChannel | null))
+    const messages = await channel?.messages.fetch()!
 
     // i hate myself
     let message: Message | null = null

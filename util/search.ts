@@ -29,15 +29,17 @@ export async function searchSongdata(client: CustomClient, type: SongDataSearchT
         { name: ["difficulties", "name"], weight: 0.6 }
       ]
     }, index).search(query, { limit: 25 });
-    result.forEach(item => {
-      const distinctNames = Array.from(new Set(item.item.difficulties.map(d => d.name)))
+    const newResult = result.map(item => {
+      const distinctNames = Array.from(new Set(item.item.difficulties.map(d => d.name))) // some ids have more than one name, Fuse doesnt differentiate them by default
       if (distinctNames.length > 1) {
         const diffResult = new Fuse(distinctNames).search(query)
-        item.item.difficulties.sort((a, b) => diffResult.findIndex(v => v.item === a.name) - diffResult.findIndex(v => v.item === b.name))
+        const filtered = item.item.difficulties.filter(v => diffResult.some(x => x.item === v.name))
+        const sorted = filtered.sort((a, b) => diffResult.findIndex(v => v.item === a.name) - diffResult.findIndex(v => v.item === b.name))
+        return { ...item, item: { ...item.item, difficulties: sorted } };
       }
+      return item
     })
-
-    return result
+    return newResult
   } else {
     throw new Error(`Invalid search type! ${type}`);
   }

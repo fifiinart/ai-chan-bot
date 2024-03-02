@@ -1,6 +1,6 @@
 
 // Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction } from "discord.js";
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials } from "discord.js";
 import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
@@ -26,7 +26,21 @@ interface Event<N extends string = string> {
 
 // Create a new client instance
 const client: CustomClient = Object.assign<Client, Omit<CustomClient, keyof Client>>(
-  new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions] }),
+  new Client({
+    intents: [
+      GatewayIntentBits.MessageContent,
+
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.GuildMessageReactions,
+
+      GatewayIntentBits.DirectMessages,
+      GatewayIntentBits.DirectMessageReactions
+    ],
+    partials: [
+      Partials.Channel
+    ]
+  }),
   {
     commands: new Collection(),
     db: setupDB(new Database({ tabSize: 2 }))
