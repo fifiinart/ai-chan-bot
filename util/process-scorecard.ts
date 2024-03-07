@@ -118,14 +118,14 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     return ocr.data.text.trim();
   };
 
-  const diff5 = (await uppercaseAlphaWorker.recognize(await diff5Img.threshold(190).toBuffer())).data.text.trim()
+  const diff5 = (await uppercaseAlphaWorker.recognize(await diff5Img.threshold(190).toBuffer())).data.text.replaceAll(/\s/g, "")
   const diff4 = (await normalWorker.recognize(await diff4Img.threshold(190).affine([1, -0.1, 0, 1], { "background": "white" }).extend({
     background: 'white',
     top: 4,
     bottom: 4,
     left: 4,
     right: 4
-  }).toBuffer())).data.text.trim()
+  }).toBuffer())).data.text.replaceAll(/\s/g, "")
 
   const promises = [combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))
 
