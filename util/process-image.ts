@@ -30,7 +30,7 @@ export enum Difficulty {
   ETERNAL
 }
 
-export const getDifficultyName = (diff: Difficulty): string => ["Past", "Present", "Future", "Beyond"][diff]
+export const getDifficultyName = (diff: Difficulty): string => ["Past", "Present", "Future", "Beyond", "Eternal"][diff]
 
 export const JACKET_REGION: sharp.Region = {
   left: 46,

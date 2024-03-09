@@ -91,7 +91,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     load_freq_dawg: '0',
   })
   await uppercaseAlphaWorker.setParameters({
-    tessedit_char_whitelist: "PASTRENFUBYOD",
+    tessedit_char_whitelist: "PASTRENFUBYODL",
     tessedit_pageseg_mode: PSM.SINGLE_WORD
   })
 
