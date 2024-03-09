@@ -14,7 +14,7 @@ export function ccToLevel(songdata: SongDifficultyData) {
   if (songdata.level) return songdata.level;
   const { cc } = songdata
   if (cc === 0) return '?'
-  if (cc < 9) {
+  if (cc < 7) {
     return Math.floor(cc).toString()
   } else {
     return cc % 1 > .6 ? Math.floor(cc).toString() + "+" : Math.floor(cc).toString()
