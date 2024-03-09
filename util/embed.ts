@@ -109,7 +109,7 @@ export async function createDatabaseGetEmbedList(songs: SongData[], user?: User 
             "value": `${name}
         ${bold('Pack:')} ${extra.pack.base} ${extra.pack.subpack ? "| " + extra.pack.subpack : ""}`
           }),
-        ...sharedName.map(difficulty => {
+        ...sharedName.toSorted((a, b) => a.difficulty - b.difficulty).map(difficulty => {
           return createSuccessEmbed(null, null, user)
             .addFields({
               "name": `Difficulty`,
