@@ -6,6 +6,8 @@ import { OEM, PSM, createWorker } from "tesseract.js";
 import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, getSyncRegion, DIFF_REGION_V4, COMBO_REGION_V4 } from "../util/process-image";
 import { getAttachmentsFromInteraction } from "../util/get-attachments";
 
+export const isGuildOnly = true;
+
 export const data = new SlashCommandBuilder()
   .setName('run')
   .setDescription('Runs image recognition and score calculation on an Arcaea score screenshot.')
