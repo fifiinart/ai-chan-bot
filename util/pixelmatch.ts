@@ -4,6 +4,8 @@ import { SongData, SongDifficultyData } from "./database";
 import SimplDB from "simpl.db";
 import { Difficulty, JACKET_RESOLUTION, getJacketPath } from "./process-image";
 
+const MAX_DIFF_PIXELS = 3000
+
 export interface TotalDifficultyData {
   difficulty: SongDifficultyData
   song: SongData
@@ -42,8 +44,8 @@ export async function compareJackets(difficulty: Difficulty, songdata: SimplDB.C
   console.log(`Finished pixelmatching ${songPaths.size} images in ${(Date.now() - time) / 1000} seconds`)
   console.log(`Diff: ${minDiff}, Candidate: `, songCandidate)
 
-  if (songCandidate[0] == null)
-    return { diffPixels: minDiff, difficulty: songCandidate[1], song: songCandidate[0] };
+  if (songCandidate[0] == null || minDiff > MAX_DIFF_PIXELS)
+    return { diffPixels: minDiff, difficulty: null, song: null };
   else
     return { diffPixels: minDiff, difficulty: songCandidate[1], song: songCandidate[0] };
 }
