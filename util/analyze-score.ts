@@ -29,7 +29,7 @@ export type NonFRScore = { isFullRecall: false } & NonPMScore
 export type ScoreAnalysis = ScoreAnalysisBase & (FRScore | NonFRScore)
 
 
-export function analyzeScore(score: Score, song: TotalDifficultyData): ScoreAnalysis {
+export function analyzeScore(score: Omit<Score, "version">, song: TotalDifficultyData): ScoreAnalysis {
   // Find play rating
   const playRating = calculatePlayRating(score.score, song.difficulty.cc)
   const percentLongestCombo = score.combo / song.difficulty.notes

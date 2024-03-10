@@ -1,4 +1,4 @@
-import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, EmbedData, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold } from "discord.js";
+import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, EmbedData, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold, inlineCode } from "discord.js";
 import { Difficulty, getDifficultyName } from "./process-image";
 import { SongData, SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";
@@ -6,6 +6,7 @@ import { groupBy } from "./array-group";
 
 import fs from 'fs/promises'
 import path from "path";
+import { ScoreEntry, UpdateResult, UpdateResultType } from "./personal-scores";
 
 export const SUCCESS_COLOR = 0x4BB543
 export const ERROR_COLOR = 0xF44336
@@ -189,3 +190,25 @@ export function createSongAnalysisEmbed(analysis: ScoreAnalysis, user?: User | G
   }
   return embed
 }
+export function createAddScoreEmbed(entry: ScoreEntry, result: UpdateResult, user?: User | GuildMember | undefined): EmbedBuilder {
+
+  switch (result.type) {
+    case UpdateResultType.NewScore:
+      return createSuccessEmbed("New Score", null, user)
+        .setDescription(`Rank: ${inlineCode("#" + (result.newIdx + 1))}`)
+    case UpdateResultType.NoChange:
+      return createSuccessEmbed("No Change", null, user)
+        .setDescription(`Personal Best: [${inlineCode("#" + (result.oldIdx + 1))}] ${inlineCode(result.oldScore.toString())} (${scoreDiff(result.oldScore, entry.score)})`)
+    case UpdateResultType.ReplaceScore:
+      return createSuccessEmbed("Replace Score", null, user)
+        .setDescription(`Rank: ${inlineCode("#" + (result.oldIdx + 1))} → ${inlineCode("#" + (result.newIdx + 1))}
+Score: ${inlineCode(result.oldScore.toString())} → ${inlineCode(entry.score.toString())} (${scoreDiff(result.oldScore, entry.score)})`)
+  }
+}
+function scoreDiff(oldScore: number, newScore: number) {
+  if (newScore < oldScore) {
+    return inlineCode("-" + (oldScore - newScore));
+  }
+  return inlineCode("+" + (newScore - oldScore));
+}
+
