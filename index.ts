@@ -1,11 +1,12 @@
 
 // Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials, RESTPostAPIApplicationGuildCommandsJSONBody, RESTPostAPIApplicationCommandsResult } from "discord.js";
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials, RESTPostAPIApplicationGuildCommandsJSONBody, RESTPostAPIApplicationCommandsResult, DMChannel, inlineCode } from "discord.js";
 import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
 import { Database } from "simpl.db";
 import { setupDB } from "./util/database";
+import { createErrorEmbed } from "./util/embed";
 
 export interface CommandLike<C extends SlashCommandBuilder | SlashCommandSubcommandBuilder | SlashCommandSubcommandGroupBuilder = SlashCommandBuilder> {
   data: C
@@ -71,13 +72,30 @@ for (const file of commandFiles) {
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
 
+function executeEventWithLogging(event: Event) {
+  return async function (...args: any[]) {
+    try {
+      event.execute(...args)
+    } catch (e) {
+      const time = Date.now()
+      console.error(e, (e instanceof Error ? e.stack : null))
+      const channel = await client.channels.fetch(process.env.OWNER_DM!) as DMChannel
+      channel.send({
+        embeds: [createErrorEmbed(inlineCode(String(e)))
+          .setTimestamp(time)
+          .setDescription(inlineCode(e instanceof Error ? e.stack ?? "" : ""))]
+      })
+    }
+  }
+}
+
 for (const file of eventFiles) {
   const filePath = path.join(eventsPath, file);
   const event: Event = require(filePath);
   if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args));
+    client.once(event.name, executeEventWithLogging(event));
   } else {
-    client.on(event.name, (...args) => event.execute(...args));
+    client.on(event.name, executeEventWithLogging(event));
   }
 }
 
