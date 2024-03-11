@@ -1,4 +1,4 @@
-import { Attachment, AttachmentBuilder, EmbedBuilder, Events, GuildMember, Message, MessageReaction, MessageReplyOptions, ReactionEmoji, User, isJSONEncodable } from "discord.js";
+import { Attachment, AttachmentBuilder, DiscordAPIError, EmbedBuilder, Events, GuildMember, Message, MessageReaction, MessageReplyOptions, ReactionEmoji, User, isJSONEncodable } from "discord.js";
 import type { CustomClient } from ".."
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
@@ -69,7 +69,11 @@ async function tryAutoProcess(message: Message, user: User | GuildMember) {
     replies.forEach((r, i) => r.embeds[0] = r.embeds[0].setTitle(r.embeds[0].data.title + ` (${i + 1}/${replies.length})`))
   }
 
-  await collectReactions(message, replies);
+  try { await collectReactions(message, replies); }
+  catch (e) {
+    if (!(e instanceof DiscordAPIError && e.code == 10008)) throw e;
+    else console.log("Message deleted!")
+  }
 }
 
 async function collectReactions(message: Message<boolean>, replies: (MessageReplyOptions & { embeds: EmbedBuilder[] })[]) {
