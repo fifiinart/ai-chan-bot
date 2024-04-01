@@ -83,7 +83,7 @@ export async function processScoreImage(scoreImg: sharp.Sharp) {
     bottom: 4,
     left: 4,
     right: 4
-  }).blur(.5);
+  }).blur(.7);
   composed = sharp(await composed.toBuffer()).threshold(255 - 50).png();
   return { composed, colored, scoreImg };
 }
