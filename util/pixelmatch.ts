@@ -4,7 +4,7 @@ import { SongData, SongDifficultyData } from "./database";
 import SimplDB from "simpl.db";
 import { Difficulty, JACKET_RESOLUTION, getJacketPath } from "./process-image";
 
-const MAX_DIFF_PIXELS = 3000
+const MAX_DIFF_PIXELS = 3500
 
 export interface TotalDifficultyData {
   difficulty: SongDifficultyData

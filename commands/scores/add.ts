@@ -64,9 +64,7 @@ export async function execute(interaction: CommandInteraction) {
   const entry = scoreAnalysisToDBEntry({ song, difficulty }, { combo, score, difficulty: difficulty.difficulty }, analysis);
   const result = addScore((interaction.client as CustomClient).db, interaction.user.id, entry)
 
-  const embed = createSongAnalysisEmbed(analysis)
-
-  const filename = `${song.id + (difficulty.subid ? '-' + difficulty.subid : '')}.png`
+  // const filename = `${song.id + (difficulty.subid ? '-' + difficulty.subid : '')}.png`
   interaction.reply({
     embeds: [createAddScoreEmbed(entry, result, user), createSongAnalysisEmbed(analysis)],
     // files: [new AttachmentBuilder(

@@ -125,7 +125,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
     right: 4
   }).toBuffer())).data.text.replaceAll(/\s/g, "")
 
-  const promises = [combo4Img, combo5Img, composed].map((x, i) => sharpToText(x, i, digitScheduler))
+  const promises = [combo4Img.threshold(128), combo5Img.threshold(128), composed].map((x, i) => sharpToText(x, i, digitScheduler))
 
   const [combo4, combo5, score] = await Promise.all(promises)
 

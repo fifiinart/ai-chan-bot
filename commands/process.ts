@@ -45,7 +45,7 @@ export async function execute(interaction: CommandInteraction) {
     const { score, difficulty, combo } = data.data;
 
     const files: [string, Buffer][] = [
-      ["jacket", data.files.jacket]
+      ["jacket", data.files.jacket],
     ]
 
 
