@@ -1,56 +1,18 @@
-import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, type SlashCommandSubcommandsOnlyBuilder, AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
-import { createErrorEmbed, interactionMemberToMemberOrUser } from "../util/embed";
+import { SlashCommandBuilder, type SlashCommandSubcommandsOnlyBuilder } from "discord.js";
 import path from "path";
-import type { CommandLike } from ".."
 import fs from "fs"
+import { importSubcommands, subcommandAutocomplete, subcommandExecute } from "../util/subcommand-utils";
 
-let data: SlashCommandSubcommandsOnlyBuilder = new SlashCommandBuilder()
+const baseData: SlashCommandSubcommandsOnlyBuilder = new SlashCommandBuilder()
   .setName("calc")
-  .setDescription("Calculate Play Rating.")
-const subcommands = new Map<string, CommandLike<SlashCommandSubcommandBuilder>>()
+  .setDescription("Calculate Play Rating.");
 
 const commandsPath = path.join(__dirname, 'calc');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
 
-function objectIsCommandLike(obj: unknown): obj is CommandLike<SlashCommandSubcommandBuilder> {
-  if (typeof obj !== 'object' || !obj) return false;
-  if ('data' in obj && 'execute' in obj) {
-    if (obj.data instanceof SlashCommandSubcommandBuilder) {
-      return true;
-    }
-  }
-  return false;
-}
+const { data, subcommands } = importSubcommands(baseData, commandsPath, commandFiles);
 
-for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
-  const subcommand: unknown = require(filePath);
-  // Set a new item in the Collection with the key as the command name and the value as the exported module
-  if (objectIsCommandLike(subcommand)) {
-    data = data.addSubcommand(subcommand.data)
-    subcommands.set(subcommand.data.name, subcommand)
-    console.log(`Subcommand ${subcommand.data.name} registered!`)
-  } else {
-    console.log(`[WARNING] The subcommand at ${filePath} is missing a required "data" or "execute" property.`);
-  }
-}
-
-async function execute(interaction: ChatInputCommandInteraction) {
-  const subcommand = interaction.options.getSubcommand()
-  if (subcommands.has(subcommand)) {
-    return subcommands.get(subcommand)!.execute(interaction)
-  }
-  await interaction.reply({ embeds: [createErrorEmbed(`Subcommand ${inlineCode(subcommand)} not found in command ${inlineCode(data.name)}.`, interactionMemberToMemberOrUser(interaction.member))] })
-}
-
-async function autocomplete(interaction: AutocompleteInteraction) {
-  const subcommand = interaction.options.getSubcommand()
-  if (subcommands.has(subcommand)) {
-    if (subcommands.get(subcommand)!.autocomplete)
-      return subcommands.get(subcommand)!.autocomplete!(interaction)
-  }
-
-  console.error(`No autocomplete function found for subcommand ${inlineCode(subcommand)} in command ${inlineCode(data.name)}.`)
-}
+const execute = subcommandExecute(subcommands, data);
+const autocomplete = subcommandAutocomplete(subcommands, data);
 
 export { data, execute, autocomplete }

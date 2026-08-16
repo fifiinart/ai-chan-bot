@@ -1,9 +1,8 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, AttachmentBuilder, InteractionReplyOptions, ChatInputCommandInteraction } from "discord.js";
 import sharp from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
-import { OEM, PSM, createWorker } from "tesseract.js";
-import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, MULT, getSyncRegion, DIFF_REGION_V4, COMBO_REGION_V4 } from "../util/process-image";
+import { SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, getSyncRegion, DIFF_REGION_V4, COMBO_REGION_V4 } from "../util/process-image";
 import { getAttachmentsFromInteraction } from "../util/get-attachments";
 
 export const isGuildOnly = true;
@@ -16,8 +15,8 @@ export const data = new SlashCommandBuilder()
     .setDescription('Link to the score image, can be "m1" or blank to scrape from your last submission.')
     .setRequired(false))
 
-const relativeLinkRegex = /^[mM](\d+)$/
-const imageLinkRegex = /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|svg|PNG|JPG|JPEG|GIF|SVG))/g
+// const relativeLinkRegex = /^[mM](\d+)$/
+// const imageLinkRegex = /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|svg|PNG|JPG|JPEG|GIF|SVG))/g
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 

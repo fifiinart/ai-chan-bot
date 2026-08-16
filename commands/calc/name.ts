@@ -1,6 +1,6 @@
-import { AttachmentBuilder, AutocompleteInteraction, BaseInteraction, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder, bold, inlineCode } from "discord.js";
+import { AttachmentBuilder, AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandSubcommandBuilder, bold, inlineCode } from "discord.js";
 import type { CustomClient } from "../.."
-import { ccToLevel, createDatabaseGetEmbedList, createErrorEmbed, createSuccessEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
+import { ccToLevel, createErrorEmbed, createSuccessEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import { searchSongdata } from "../../util/search";
 import { calculatePlayRating } from "../../util/analyze-score";
 import { getDifficultyName } from "../../util/process-image";

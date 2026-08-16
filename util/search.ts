@@ -7,7 +7,7 @@ let index: any = undefined
 
 export async function updateIndex(db: SimplDB.Database) {
   const Fuse = (await import('fuse.js')).default;
-  let _songdata = db.getCollection<SongData>("songdata")!.getAll();
+  const _songdata = db.getCollection<SongData>("songdata")!.getAll();
   return index = Fuse.createIndex(["id", ["difficulties", "name"]], _songdata);
 }
 
@@ -15,7 +15,7 @@ export type SongDataSearchType = 'name'
 
 export async function searchSongdata(client: CustomClient, type: SongDataSearchType, query: string) {
   const Fuse = (await import('fuse.js')).default;
-  let _songdata = client.db.getCollection<SongData>("songdata")!.getAll();
+  const _songdata = client.db.getCollection<SongData>("songdata")!.getAll();
   if (!index) updateIndex(client.db)
 
   if (type === 'name') {

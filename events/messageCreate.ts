@@ -22,7 +22,7 @@ export async function execute(message: Message) {
 
 const embedsHaveErrors = (s: MessageReplyOptions) => s.embeds!.some(e => (isJSONEncodable(e) ? e.toJSON() : e).title === "Error");
 async function tryAutoProcess(message: Message, user: User | GuildMember) {
-  let now = Date.now();
+  const now = Date.now();
 
   const result = await getAttachmentsFromMessage(message);
   if (!result.success) {

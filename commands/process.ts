@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, AttachmentBuilder, ChatInputCommandInteraction } from "discord.js";
 import { getAttachmentsFromInteraction } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { compareJackets } from "../util/pixelmatch";
@@ -6,6 +6,7 @@ import { CustomClient } from "..";
 import { createErrorEmbed, createProcessEmbed, createSongAnalysisEmbed, createSongDataEmbed, interactionMemberToMemberOrUser } from "../util/embed";
 import { analyzeScore } from "../util/analyze-score";
 import { stitchMessages } from "../util/stitch-messages";
+import { type SongData } from "../util/database";
 
 export const data = new SlashCommandBuilder()
   .setName('process')
@@ -21,7 +22,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.deferReply();
 
-  let now = Date.now();
+  const now = Date.now();
 
   const result = await getAttachmentsFromInteraction(interaction);
   if (!result.success) {
@@ -52,7 +53,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     let songEmbed;
     const startCompareTime = Date.now()
     console.log("Starting to compare jackets...")
-    const song = await compareJackets(difficulty, (interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
+
+    const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata");
+
+    if (!SongData) {
+      throw new Error("No song data in database!")
+    }
+
+    const song = await compareJackets(difficulty, SongData, data.files.jacket)
     if (!song.difficulty) {
       songEmbed = [createErrorEmbed("Song not found.", user)]
     }

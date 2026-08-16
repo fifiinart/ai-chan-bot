@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, CommandInteraction, CommandInteractionOptionResolver, DMChannel, Message } from "discord.js"
+import { ChatInputCommandInteraction, DMChannel, Message } from "discord.js"
 
 export interface RetrieveAttachmentSuccess {
   success: true,
@@ -24,12 +24,16 @@ export async function getAttachmentsFromInteraction(interaction: ChatInputComman
     const scrapeDist = link ? parseInt(link.substring(1)) : 1
 
     const channel = interaction.channel ?? (await interaction.client.channels.fetch(interaction.channelId) as (DMChannel | null))
-    const messages = await channel?.messages.fetch()!
+    const messages = await channel?.messages.fetch();
+
+    if (!messages) {
+      return { success: false, error: "Channel or channel messages unavailable." };
+    }
 
     // i hate myself
     let message: Message | null = null
     let counter = 0
-    for (let msg of messages.values()) {
+    for (const msg of messages.values()) {
       if (msg.author.id === interaction.user.id) counter++;
 
       if (counter === scrapeDist) {
@@ -62,7 +66,7 @@ export async function getAttachmentsFromInteraction(interaction: ChatInputComman
 }
 
 export async function getAttachmentsFromMessage(message: Message): Promise<RetrieveAttachmentResponse> {
-  let attachments = [
+  const attachments = [
     ...message.attachments.mapValues(x => x.proxyURL).values(),
     message.content
   ].flatMap(att => att.match(imageLinkRegex) ?? [])

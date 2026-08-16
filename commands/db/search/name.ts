@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, BaseInteraction, ChatInputCommandInteraction, CommandInteraction, GuildMember, SlashCommandSubcommandBuilder, bold } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from "discord.js";
 import type { CustomClient } from "../../.."
 import { stitchMessages } from "../../../util/stitch-messages";
 import { createDatabaseGetEmbedList, createErrorEmbed, interactionMemberToMemberOrUser } from "../../../util/embed";

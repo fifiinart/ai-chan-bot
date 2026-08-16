@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, ChatInputCommandInteraction, CommandInteraction, SlashCommandSubcommandBuilder } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from "discord.js";
 import type { CustomClient } from "../.."
 import { createErrorEmbed, createSongAnalysisEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import { searchSongdata } from "../../util/search";

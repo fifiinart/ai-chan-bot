@@ -1,4 +1,4 @@
-import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType, ChatInputCommandInteraction } from "discord.js";
+import { AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType, ChatInputCommandInteraction } from "discord.js";
 import { CustomClient } from "../.."
 
 import { Difficulty, JACKET_RESOLUTION } from "../../util/process-image";
@@ -86,14 +86,18 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   const user = interactionMemberToMemberOrUser(interaction.member)
 
-  const guilds = process.env.GUILD_IDS!.split(",")
+  if (!process.env.GUILD_IDS) {
+    throw new Error("Trusted guild IDs not defined in environment!")
+  }
+
+  const guilds = process.env.GUILD_IDS.split(",")
 
   if ((interaction.guild?.id === undefined || !guilds.includes(interaction.guild?.id)) && (user?.id !== process.env.OWNER_ID)) {
     await interaction.reply("Only the owner or members of trusted guilds can submit information!");
     return;
   }
 
-  let now = Date.now();
+  const now = Date.now();
 
   const options = interaction.options as CommandInteractionOptionResolver
 
@@ -144,9 +148,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const difficultyData: SongDifficultyData = { name, artist, charter, level, cc, notes, difficulty, subid }
   const extraData: SongExtraData = { pack: { base: pack, subpack } }
 
-  const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")!
+  const SongData = (interaction.client as CustomClient).db.getCollection<SongData>("songdata")
 
-
+  if (!SongData) {
+    throw new Error("No song data in database!")
+  }
 
   let undoMethod: UndoMethod | undefined = undefined;
   let songdata: SongData | undefined = undefined;
@@ -183,8 +189,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   let oldJacket: Buffer | undefined = undefined;
   try {
     oldJacket = await fs.readFile(jacketPath)
-  } catch (e) {
-  }
+  } catch { /* empty */ }
 
   await fs.writeFile(jacketPath, new Uint8Array(await sharp(jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer()))
 
@@ -210,7 +215,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   try {
     const confirmation = await response.awaitMessageComponent<ComponentType.Button>({ filter: collectorFilter, time: 60000 });
 
-    if (confirmation.customId = "undo") {
+    if (confirmation.customId === "undo") {
       undoMethod(songdata, SongData)
       if (oldJacket) {
         await fs.writeFile(jacketPath, new Uint8Array(oldJacket))
@@ -223,7 +228,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         components: []
       })
     }
-  } catch (e) {
+  } catch {
     undoBtnComp.setDisabled(true);
   }
 

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, GuildMember, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 
 export const data = new SlashCommandBuilder()
   .setName('ping')

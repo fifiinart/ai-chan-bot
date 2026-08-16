@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, codeBlock, inlineCode } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder, codeBlock, inlineCode } from "discord.js";
 import { CustomClient } from ".."
 import fs from "fs/promises"
 import path from "path";
@@ -16,13 +16,15 @@ async function rerequireDirectory(dir: string, basePath: string) {
     }
 
     for (const file of files) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete require.cache[require.resolve(`${basePath}/${dir}/${file.name}`)];
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require(`${basePath}/${dir}/${file.name}`)
       console.log(`${dir}/${file.name} uncached`)
     }
     console.log(`${dir} directory uncached`)
-  } catch (e: any) {
-    if (e?.code === "ENOENT")
+  } catch (e: unknown) {
+    if (e instanceof Error && 'code' in e && e?.code === "ENOENT")
       console.error(e)
     else throw e;
   }
@@ -43,18 +45,21 @@ module.exports = {
       return await interaction.reply("Only the owner of the bot can reload a command!")
 
     const commandName = interaction.options.getString('command', true).toLowerCase();
-    const commands = (interaction.client as CustomClient).commands!;
+    const commands = (interaction.client as CustomClient).commands;
+
     const command = commands.get(commandName);
 
     if (!command) {
       return await interaction.reply({ embeds: [createErrorEmbed(`There is no command with name ${inlineCode(commandName)}!`, user)] });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete require.cache[require.resolve(`./${command.data.name}.ts`)];
     await rerequireDirectory("util", process.cwd())
     await rerequireDirectory(path.join("commands", command.data.name), process.cwd())
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const newCommand = require(`./${command.data.name}.ts`);
       if ("data" in newCommand && "execute" in newCommand) {
         commands.delete(command.data.name);

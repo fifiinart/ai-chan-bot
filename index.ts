@@ -1,6 +1,6 @@
 
 // Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials, RESTPostAPIApplicationGuildCommandsJSONBody, RESTPostAPIApplicationCommandsResult, DMChannel, inlineCode, ChatInputCommandInteraction } from "discord.js";
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials, RESTPostAPIApplicationGuildCommandsJSONBody, DMChannel, inlineCode, ChatInputCommandInteraction, APIApplicationCommand } from "discord.js";
 import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
@@ -23,7 +23,7 @@ export interface CustomClient extends Client {
 interface Event<N extends string = string> {
   name: N
   once: boolean
-  execute(...args: any): void
+  execute(...args: unknown[]): void
 }
 
 // Create a new client instance
@@ -58,6 +58,7 @@ const guildRegisterData: RESTPostAPIApplicationGuildCommandsJSONBody[] = [];
 
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const command: CommandLike = require(filePath);
   // Set a new item in the Collection with the key as the command name and the value as the exported module
   if ('data' in command && 'execute' in command) {
@@ -73,13 +74,18 @@ const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
 
 function executeEventWithLogging(event: Event) {
-  return async function (...args: any[]) {
+  return async function (...args: unknown[]) {
+
     try {
       event.execute(...args)
     } catch (e) {
+      if (!process.env.OWNER_DM) {
+        throw new Error("No owner DM set in environment!", { cause: e });
+      }
+
       const time = Date.now()
       console.error(e, (e instanceof Error ? e.stack : null))
-      const channel = await client.channels.fetch(process.env.OWNER_DM!) as DMChannel
+      const channel = await client.channels.fetch(process.env.OWNER_DM) as DMChannel
       channel.send({
         embeds: [createErrorEmbed(inlineCode(String(e)))
           .setTimestamp(time)
@@ -91,6 +97,7 @@ function executeEventWithLogging(event: Event) {
 
 for (const file of eventFiles) {
   const filePath = path.join(eventsPath, file);
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const event: Event = require(filePath);
   if (event.once) {
     client.once(event.name, executeEventWithLogging(event));
@@ -99,17 +106,29 @@ for (const file of eventFiles) {
   }
 }
 
-const rest = new REST().setToken(process.env.TOKEN!);
+if (!process.env.TOKEN) {
+  throw new Error("No token set in environment!")
+}
+
+if (!process.env.TOKEN) {
+  throw new Error("No token set in environment!")
+}
+
+const rest = new REST().setToken(process.env.TOKEN);
 
 (async () => {
+  if (!process.env.CLIENT_ID) {
+    throw new Error("No client ID set in environment!")
+  }
+
   if (registerData.length > 0) {
     try {
       console.log(`Started refreshing ${registerData.length} application (/) commands.`);
 
-      const data: any = await rest.put(
-        Routes.applicationCommands(process.env.CLIENT_ID!),
+      const data = await rest.put(
+        Routes.applicationCommands(process.env.CLIENT_ID),
         { body: registerData },
-      );
+      ) as APIApplicationCommand[];
 
       console.log(`Successfully reloaded ${data.length} application (/) commands.`);
     } catch (error) {
@@ -120,18 +139,26 @@ const rest = new REST().setToken(process.env.TOKEN!);
 })();
 
 (async () => {
+  if (!process.env.GUILD_ID) {
+    throw new Error("No trusted guild IDs set in environment!")
+  }
+
   if (guildRegisterData.length > 0) {
     try {
       console.log(`Started refreshing ${guildRegisterData.length} application guild (/) commands.`);
 
-      const commandGuilds = process.env.GUILD_IDS!.split(',')
+      const commandGuilds = process.env.GUILD_ID.split(',')
       await Promise.all(commandGuilds.map(async id => {
+        if (!process.env.CLIENT_ID) {
+          throw new Error("No client ID set in environment!")
+        }
+
         console.log(`Refreshing for guild ${id}...`)
         // The put method is used to fully refresh all commands in the guild with the current set
-        const data: any = await rest.put(
-          Routes.applicationGuildCommands(process.env.CLIENT_ID!, id),
+        const data = await rest.put(
+          Routes.applicationGuildCommands(process.env.CLIENT_ID, id),
           { body: guildRegisterData },
-        );
+        ) as APIApplicationCommand[];
         console.log(`Successfully reloaded ${data.length} application guild (/) commands for guild ${id}.`);
       }));
 

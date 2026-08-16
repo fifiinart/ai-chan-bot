@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, CommandInteraction, SlashCommandSubcommandBuilder, inlineCode } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder, inlineCode } from "discord.js";
 import { createSuccessEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import { calculatePlayRating } from "../../util/analyze-score";
 
