@@ -1,6 +1,6 @@
 
 // Require the necessary discord.js classes
-import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials, RESTPostAPIApplicationGuildCommandsJSONBody, RESTPostAPIApplicationCommandsResult, DMChannel, inlineCode } from "discord.js";
+import { Client, GatewayIntentBits, Collection, SlashCommandBuilder, CommandInteraction, type RESTPostAPIChatInputApplicationCommandsJSONBody, REST, Routes, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, AutocompleteInteraction, Partials, RESTPostAPIApplicationGuildCommandsJSONBody, RESTPostAPIApplicationCommandsResult, DMChannel, inlineCode, ChatInputCommandInteraction } from "discord.js";
 import "dotenv/config"
 import fs from "node:fs"
 import path from "node:path"
@@ -10,7 +10,7 @@ import { createErrorEmbed } from "./util/embed";
 
 export interface CommandLike<C extends SlashCommandBuilder | SlashCommandSubcommandBuilder | SlashCommandSubcommandGroupBuilder = SlashCommandBuilder> {
   data: C
-  execute(interaction: CommandInteraction): Promise<void>
+  execute(interaction: ChatInputCommandInteraction): Promise<void>
   autocomplete?(interaction: AutocompleteInteraction): Promise<void>
   isGuildOnly?: boolean
 }

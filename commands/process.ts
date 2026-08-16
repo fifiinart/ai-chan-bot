@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, GuildMember, ChatInputCommandInteraction } from "discord.js";
 import { getAttachmentsFromInteraction } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
 import { compareJackets } from "../util/pixelmatch";
@@ -15,7 +15,7 @@ export const data = new SlashCommandBuilder()
     .setDescription('Link to the score image, can be "m1" or blank to scrape from your last submission.')
     .setRequired(false))
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
 
   const user = interactionMemberToMemberOrUser(interaction.member)
 

@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, CommandInteraction, SlashCommandSubcommandBuilder } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, CommandInteraction, SlashCommandSubcommandBuilder } from "discord.js";
 import type { CustomClient } from "../.."
 import { createErrorEmbed, createSongAnalysisEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import { searchSongdata } from "../../util/search";
@@ -34,7 +34,7 @@ export const data = new SlashCommandSubcommandBuilder()
     .setDescription('The combo of the score to add.')
     .setRequired(true))
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
   const user = interactionMemberToMemberOrUser(interaction.member)
 
   const nameQuery = interaction.options.get('name', true).value as string

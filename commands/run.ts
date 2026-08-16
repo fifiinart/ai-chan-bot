@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, AttachmentBuilder, InteractionReplyOptions, ChatInputCommandInteraction } from "discord.js";
 import sharp from "sharp";
 import axios from "axios";
 import { Stream } from "stream";
@@ -19,7 +19,7 @@ export const data = new SlashCommandBuilder()
 const relativeLinkRegex = /^[mM](\d+)$/
 const imageLinkRegex = /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|svg|PNG|JPG|JPEG|GIF|SVG))/g
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
 
   const result = await getAttachmentsFromInteraction(interaction);
   if (!result.success) {

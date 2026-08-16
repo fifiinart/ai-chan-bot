@@ -1,4 +1,4 @@
-import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, codeBlock, inlineCode } from "discord.js";
+import { ChatInputCommandInteraction, CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, codeBlock, inlineCode } from "discord.js";
 import { CustomClient } from ".."
 import fs from "fs/promises"
 import path from "path";
@@ -36,13 +36,13 @@ module.exports = {
       option.setName('command')
         .setDescription('The command to reload.')
         .setRequired(true)),
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const user = interactionMemberToMemberOrUser(interaction.member)
 
     if (interaction.user.id !== process.env.OWNER_ID)
       return await interaction.reply("Only the owner of the bot can reload a command!")
 
-    const commandName = (interaction.options as CommandInteractionOptionResolver).getString('command', true).toLowerCase();
+    const commandName = interaction.options.getString('command', true).toLowerCase();
     const commands = (interaction.client as CustomClient).commands!;
     const command = commands.get(commandName);
 

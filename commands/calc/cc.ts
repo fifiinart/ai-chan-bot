@@ -1,4 +1,4 @@
-import { CommandInteraction, SlashCommandSubcommandBuilder, inlineCode } from "discord.js";
+import { ChatInputCommandInteraction, CommandInteraction, SlashCommandSubcommandBuilder, inlineCode } from "discord.js";
 import { createSuccessEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import { calculatePlayRating } from "../../util/analyze-score";
 
@@ -15,7 +15,7 @@ export const data = new SlashCommandSubcommandBuilder()
     .setDescription("The CC to calculate Play Rating for.")
     .setRequired(true))
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
   const cc = interaction.options.get('cc', true).value as number
   const score = interaction.options.get('score', true).value as number
   const playRating = calculatePlayRating(score, cc);

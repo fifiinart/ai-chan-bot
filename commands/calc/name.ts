@@ -1,4 +1,4 @@
-import { AttachmentBuilder, AutocompleteInteraction, BaseInteraction, CommandInteraction, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder, bold, inlineCode } from "discord.js";
+import { AttachmentBuilder, AutocompleteInteraction, BaseInteraction, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder, bold, inlineCode } from "discord.js";
 import type { CustomClient } from "../.."
 import { ccToLevel, createDatabaseGetEmbedList, createErrorEmbed, createSuccessEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import { searchSongdata } from "../../util/search";
@@ -30,7 +30,7 @@ export const data = new SlashCommandSubcommandBuilder()
       { name: "Beyond", value: "3" },
       { name: 'Eternal', value: "4" }).setRequired(true))
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
   const user = interactionMemberToMemberOrUser(interaction.member)
 
   const nameQuery = interaction.options.get('name', true).value as string

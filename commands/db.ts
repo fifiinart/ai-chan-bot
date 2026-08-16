@@ -1,4 +1,4 @@
-import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, type SlashCommandSubcommandsOnlyBuilder, AutocompleteInteraction } from "discord.js";
+import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, type SlashCommandSubcommandsOnlyBuilder, AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
 import { createErrorEmbed, interactionMemberToMemberOrUser } from "../util/embed";
 import path from "path";
 import type { CommandLike } from ".."
@@ -39,15 +39,15 @@ for (const file of commandFiles) {
   }
 }
 
-async function execute(interaction: CommandInteraction) {
-  const group = (<CommandInteractionOptionResolver>interaction.options).getSubcommandGroup()
+async function execute(interaction: ChatInputCommandInteraction) {
+  const group = interaction.options.getSubcommandGroup()
   if (group) {
     if (subcommands.has(group)) {
       return subcommands.get(group)!.execute(interaction)
     }
   }
 
-  const subcommand = (<CommandInteractionOptionResolver>interaction.options).getSubcommand()
+  const subcommand = interaction.options.getSubcommand()
   if (subcommands.has(subcommand)) {
     return subcommands.get(subcommand)!.execute(interaction)
   }
@@ -55,7 +55,7 @@ async function execute(interaction: CommandInteraction) {
 }
 
 async function autocomplete(interaction: AutocompleteInteraction) {
-  const group = (<CommandInteractionOptionResolver>interaction.options).getSubcommandGroup()
+  const group = interaction.options.getSubcommandGroup()
   if (group) {
     if (subcommands.has(group)) {
       if (subcommands.get(group)!.autocomplete)
@@ -63,7 +63,7 @@ async function autocomplete(interaction: AutocompleteInteraction) {
     }
   }
 
-  const subcommand = (<CommandInteractionOptionResolver>interaction.options).getSubcommand()
+  const subcommand = interaction.options.getSubcommand()
   if (subcommands.has(subcommand)) {
     if (subcommands.get(subcommand)!.autocomplete)
       return subcommands.get(subcommand)!.autocomplete!(interaction)

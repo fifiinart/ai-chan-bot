@@ -1,4 +1,4 @@
-import { CommandInteraction, CommandInteractionOptionResolver, DMChannel, Message } from "discord.js"
+import { ChatInputCommandInteraction, CommandInteraction, CommandInteractionOptionResolver, DMChannel, Message } from "discord.js"
 
 export interface RetrieveAttachmentSuccess {
   success: true,
@@ -15,8 +15,8 @@ export type RetrieveAttachmentResponse = RetrieveAttachmentSuccess | RetrieveAtt
 const relativeLinkRegex = /^[mM](\d+)$/
 const imageLinkRegex = /(http)?s?:?(\/\/[^"'\s]*\S\.(?:png|jpg|jpeg|gif|svg))([\\?&]([^&=\s]+)=([^&=\s]+))*/gi // match query url params for new discord expiration
 
-export async function getAttachmentsFromInteraction(interaction: CommandInteraction): Promise<RetrieveAttachmentResponse> {
-  const link = (interaction.options as CommandInteractionOptionResolver).getString('image')?.trim()
+export async function getAttachmentsFromInteraction(interaction: ChatInputCommandInteraction): Promise<RetrieveAttachmentResponse> {
+  const link = interaction.options.getString('image')?.trim()
   // TODO: find a way to act on an image that the user replies to
 
   let attachments: string[]

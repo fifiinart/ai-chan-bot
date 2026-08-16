@@ -1,4 +1,4 @@
-import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, AutocompleteInteraction } from "discord.js";
+import { CommandInteraction, CommandInteractionOptionResolver, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder, inlineCode, AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
 import { createErrorEmbed, interactionMemberToMemberOrUser } from "../../util/embed";
 import path from "path";
 import { CommandLike } from "../.."
@@ -35,7 +35,7 @@ for (const file of commandFiles) {
   }
 }
 
-async function execute(interaction: CommandInteraction) {
+async function execute(interaction: ChatInputCommandInteraction) {
   const subcommand = (<CommandInteractionOptionResolver>interaction.options).getSubcommand()
   if (subcommands.has(subcommand)) {
     return subcommands.get(subcommand)!.execute(interaction)

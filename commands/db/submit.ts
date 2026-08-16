@@ -1,4 +1,4 @@
-import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType } from "discord.js";
+import { CommandInteraction, AttachmentBuilder, CommandInteractionOptionResolver, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandSubcommandBuilder, CollectorFilter, ButtonInteraction, ComponentType, ChatInputCommandInteraction } from "discord.js";
 import { CustomClient } from "../.."
 
 import { Difficulty, JACKET_RESOLUTION } from "../../util/process-image";
@@ -82,7 +82,7 @@ export const data = new SlashCommandSubcommandBuilder()
   .addStringOption(opt => opt
     .setName('charter').setDescription('The charter name as listed, for that difficulty.').setRequired(false))
 
-export async function execute(interaction: CommandInteraction): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
 
   const user = interactionMemberToMemberOrUser(interaction.member)
 

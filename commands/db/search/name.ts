@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, BaseInteraction, CommandInteraction, GuildMember, SlashCommandSubcommandBuilder, bold } from "discord.js";
+import { AutocompleteInteraction, BaseInteraction, ChatInputCommandInteraction, CommandInteraction, GuildMember, SlashCommandSubcommandBuilder, bold } from "discord.js";
 import type { CustomClient } from "../../.."
 import { stitchMessages } from "../../../util/stitch-messages";
 import { createDatabaseGetEmbedList, createErrorEmbed, interactionMemberToMemberOrUser } from "../../../util/embed";
@@ -22,7 +22,7 @@ export const data = new SlashCommandSubcommandBuilder()
       { name: "Beyond", value: "3" },
       { name: 'Eternal', value: "4" }).setRequired(false))
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
   const user = interactionMemberToMemberOrUser(interaction.member)
 
   const nameQuery = interaction.options.get('name', true).value as string
