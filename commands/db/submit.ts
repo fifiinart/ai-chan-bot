@@ -86,7 +86,9 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
 
   const user = interactionMemberToMemberOrUser(interaction.member)
 
-  if ((![process.env.GUILD_ID, process.env.GUILD_ID_2].includes(interaction.guild?.id)) && (user?.id !== process.env.OWNER_ID)) {
+  const guilds = process.env.GUILD_IDS!.split(",")
+
+  if ((interaction.guild?.id === undefined || !guilds.includes(interaction.guild?.id)) && (user?.id !== process.env.OWNER_ID)) {
     await interaction.reply("Only the owner or members of trusted guilds can submit information!");
     return;
   }
@@ -184,7 +186,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
   } catch (e) {
   }
 
-  await fs.writeFile(jacketPath, await sharp(jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer())
+  await fs.writeFile(jacketPath, new Uint8Array(await sharp(jacket).resize(JACKET_RESOLUTION).ensureAlpha().png().toBuffer()))
 
   console.log(undoMethod, songdata)
 
@@ -211,7 +213,7 @@ export async function execute(interaction: CommandInteraction): Promise<void> {
     if (confirmation.customId = "undo") {
       undoMethod(songdata, SongData)
       if (oldJacket) {
-        await fs.writeFile(jacketPath, oldJacket)
+        await fs.writeFile(jacketPath, new Uint8Array(oldJacket))
       } else {
         await fs.rm(jacketPath)
       }

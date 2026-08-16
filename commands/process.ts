@@ -51,6 +51,7 @@ export async function execute(interaction: CommandInteraction) {
 
     let songEmbed;
     const startCompareTime = Date.now()
+    console.log("Starting to compare jackets...")
     const song = await compareJackets(difficulty, (interaction.client as CustomClient).db.getCollection("songdata")!, data.files.jacket)
     if (!song.difficulty) {
       songEmbed = [createErrorEmbed("Song not found.", user)]
@@ -64,6 +65,8 @@ export async function execute(interaction: CommandInteraction) {
       embeds: [createProcessEmbed(interval, score, difficulty, combo, user), ...songEmbed]
     };
   }))
+
+  console.log("Replies fetched")
 
   if (replies.length > 1) {
     replies.forEach((r, i) => r.embeds[0].setTitle(`(${i + 1}/${replies.length})`))

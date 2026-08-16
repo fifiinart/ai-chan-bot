@@ -35,6 +35,7 @@ export async function stitchMessages(messages: readonly BaseMessageOptions[], ac
   const row = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(buttons)
 
+  console.log("Sending message...")
   const response = await action({ ...messages[index], components: [row, ...messages[index].components ?? []] })
 
   const collector = response.createMessageComponentCollector({
