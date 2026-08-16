@@ -1,4 +1,4 @@
-import { Attachment, AttachmentBuilder, DiscordAPIError, EmbedBuilder, Events, GuildMember, Message, MessageReaction, MessageReplyOptions, ReactionEmoji, User, isJSONEncodable } from "discord.js";
+import { AttachmentBuilder, DiscordAPIError, EmbedBuilder, Events, GuildMember, Message, MessageReaction, MessageReplyOptions, User, isJSONEncodable } from "discord.js";
 import type { CustomClient } from ".."
 import { getAttachmentsFromMessage } from "../util/get-attachments";
 import { processScorecard } from "../util/process-scorecard";
@@ -7,8 +7,13 @@ import { createSongAnalysisEmbed, createProcessEmbed, createErrorEmbed, replaceU
 import { compareJackets } from "../util/pixelmatch";
 import 'dotenv/config'
 import { stitchMessages } from "../util/stitch-messages";
+import { SongData } from "../util/database";
 
-const registeredChannels = process.env.AUTO_CHANNELS!.split(',')
+if (!process.env.AUTO_CHANNELS) {
+  throw new Error("No auto-channels set in environment!")
+}
+
+const registeredChannels = process.env.AUTO_CHANNELS.split(',')
 
 export const name = Events.MessageCreate
 export const once = false;
@@ -20,7 +25,7 @@ export async function execute(message: Message) {
   }
 }
 
-const embedsHaveErrors = (s: MessageReplyOptions) => s.embeds!.some(e => (isJSONEncodable(e) ? e.toJSON() : e).title === "Error");
+const embedsHaveErrors = (s: MessageReplyOptions) => s.embeds?.some(e => (isJSONEncodable(e) ? e.toJSON() : e).title === "Error") ?? false;
 async function tryAutoProcess(message: Message, user: User | GuildMember) {
   const now = Date.now();
 
@@ -44,7 +49,12 @@ async function tryAutoProcess(message: Message, user: User | GuildMember) {
       const { data } = processResult;
       const { score, difficulty, combo } = data.data;
 
-      const song = await compareJackets(difficulty, (message.client as CustomClient).db.getCollection("songdata")!, data.files.jacket);
+      const SongData = (message.client as CustomClient).db.getCollection<SongData>("songdata");
+      if (!SongData) {
+        throw new Error("Song data not present on client!")
+      }
+
+      const song = await compareJackets(difficulty, SongData, data.files.jacket);
       if (!song.difficulty) {
         embeds = [createErrorEmbed("Song not found.", user)];
       }

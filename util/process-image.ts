@@ -89,24 +89,28 @@ export async function processScoreImage(scoreImg: sharp.Sharp) {
 }
 export function getSyncRegion(meta: sharp.Metadata) {
 
-  if (meta.width! > meta.height! * ASPECT) {
-    const newWidth = meta.height! * ASPECT;
-    const diffWidth = meta.width! - newWidth;
+  if (meta.width == null || meta.height == null) {
+    throw new Error("No width or height in metadata");
+  }
+
+  if (meta.width > meta.height * ASPECT) {
+    const newWidth = meta.height * ASPECT;
+    const diffWidth = meta.width - newWidth;
     return {
       left: Math.floor(diffWidth / 2),
       width: Math.floor(newWidth),
       top: 0,
-      height: meta.height!
+      height: meta.height
     };
 
   } else {
-    const newHeight = meta.width! / ASPECT;
-    const diffHeight = meta.height! - newHeight;
+    const newHeight = meta.width / ASPECT;
+    const diffHeight = meta.height - newHeight;
     return {
       top: Math.ceil(diffHeight / 2),
       height: Math.ceil(newHeight),
       left: 0,
-      width: meta.width!
+      width: meta.width
     };
   }
 

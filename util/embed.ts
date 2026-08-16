@@ -1,4 +1,4 @@
-import { APIEmbed, APIGuildMember, AttachmentBuilder, CommandInteraction, EmbedBuilder, EmbedData, GuildMember, InteractionReplyOptions, JSONEncodable, User, bold, inlineCode } from "discord.js";
+import { AttachmentBuilder, CommandInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, User, bold, inlineCode } from "discord.js";
 import { Difficulty, getDifficultyName } from "./process-image";
 import { SongData, SongDifficultyData, SongExtraData } from "./database";
 import { ScoreAnalysis } from "./analyze-score";
@@ -138,8 +138,10 @@ export async function createDatabaseGetEmbedList(songs: SongData[], user?: User 
   }
 
   results.forEach((element, i) => {
-    const firstEmbed = element.embeds![0] as EmbedBuilder
-    firstEmbed.setTitle(firstEmbed.data.title! + ` (${i + 1}/${results.length}):`)
+    const embeds = element.embeds;
+    if (!embeds) throw new Error("No embeds in interaction reply")
+    const firstEmbed = embeds[0] as EmbedBuilder
+    firstEmbed.setTitle(firstEmbed.data.title + ` (${i + 1}/${results.length}):`)
   });
 
   return results;

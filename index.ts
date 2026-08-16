@@ -110,10 +110,6 @@ if (!process.env.TOKEN) {
   throw new Error("No token set in environment!")
 }
 
-if (!process.env.TOKEN) {
-  throw new Error("No token set in environment!")
-}
-
 const rest = new REST().setToken(process.env.TOKEN);
 
 (async () => {
@@ -139,7 +135,7 @@ const rest = new REST().setToken(process.env.TOKEN);
 })();
 
 (async () => {
-  if (!process.env.GUILD_ID) {
+  if (!process.env.GUILD_IDS) {
     throw new Error("No trusted guild IDs set in environment!")
   }
 
@@ -147,7 +143,7 @@ const rest = new REST().setToken(process.env.TOKEN);
     try {
       console.log(`Started refreshing ${guildRegisterData.length} application guild (/) commands.`);
 
-      const commandGuilds = process.env.GUILD_ID.split(',')
+      const commandGuilds = process.env.GUILD_IDS.split(',')
       await Promise.all(commandGuilds.map(async id => {
         if (!process.env.CLIENT_ID) {
           throw new Error("No client ID set in environment!")

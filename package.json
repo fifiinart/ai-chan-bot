@@ -14,8 +14,7 @@
     "pixelmatch": "^5.3.0",
     "sharp": "^0.33.5",
     "simpl.db": "^2.12.1",
-    "tesseract.js": "^5.0.2",
-    "typescript": "^5.2.2"
+    "tesseract.js": "^5.0.2"
   },
   "scripts": {
     "start": "npx ts-node ./index.ts"
@@ -23,12 +22,15 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/pixelmatch": "^5.2.6",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^10.8.1",
     "ts-node": "^10.9.1",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0"
   },
   "allowScripts": {
     "sharp@0.33.5": true,
-    "tesseract.js@5.0.2": true
+    "tesseract.js@5.1.1": true
   }
 }

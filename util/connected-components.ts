@@ -81,9 +81,12 @@ export function connectedComponents(matrix: number[][]) {
   for (let y = 0; y < matrix.length; y++) {
     for (let x = 0; x < matrix[0].length; x++) {
       // If the element is not the background
-      if (labels[y][x] !== 255)
+      if (labels[y][x] !== 255) {
         // Relabel the element with the lowest equivalent label
-        labels[y][x] = sortedLabelMap.get(labels[y][x])!;
+        const value = sortedLabelMap.get(labels[y][x]);
+        if (!value) throw new Error(`No label ${x},${y} in sorted label map.`)
+        labels[y][x] = value;
+      }
     }
   }
 
@@ -107,7 +110,8 @@ export function analyzeLabels(labels: number[][]) {
       const label = labels[y][x];
 
       if (dataMap.has(label)) {
-        const data = dataMap.get(label)!;
+        const data = dataMap.get(label);
+        if (!data) throw new Error(`No label ${label}`);
         if (x < data.xMin) data.xMin = x;
         if (x > data.xMax) data.xMax = x;
         if (y < data.yMin) data.yMin = y;
@@ -179,7 +183,7 @@ export function processFromLabelData(dataList: LabelData[]) {
 
   const maxHeight = Math.max(...filtered.map(x => x.yMax - x.yMin + 1))
 
-  const marginColumns = Array<number[]>(maxHeight + MARGIN * 2).fill([]).map(_ => Array<number>(MARGIN).fill(0))
+  const marginColumns = Array<number[]>(maxHeight + MARGIN * 2).fill([]).map(() => Array<number>(MARGIN).fill(0))
 
   const matrix = [...marginColumns]
 

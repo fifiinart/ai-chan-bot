@@ -1,4 +1,4 @@
-import { ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, ComponentType, InteractionReplyOptions, InteractionResponse, Message, MessageReplyOptions, User } from "discord.js";
+import { ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, ComponentType, InteractionResponse, Message, User } from "discord.js";
 
 const setDisabledAll = (buttons: ButtonBuilder[]) => (disabled: boolean[]) => buttons.forEach((b, i) => b.setDisabled(disabled[i]))
 
@@ -68,7 +68,7 @@ export async function stitchMessages(messages: readonly BaseMessageOptions[], ac
     )
 
     await collected.update({ ...messages[index], components: [row] })
-  }).on("end", async collected => {
+  }).on("end", async () => {
     disabler([true, true, true, true])
     await response.edit({ ...messages[index], components: [row] })
   })

@@ -2,8 +2,8 @@ import axios from "axios";
 import sharp from "sharp";
 import { Stream } from "stream";
 import { createWorker, createScheduler, OEM, PSM } from "tesseract.js";
-import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat, JACKET_RESOLUTION } from "./process-image";
-import { codeBlock, inlineCode } from "discord.js";
+import { getSyncRegion, SYNC_W, SYNC_H, JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4, processScoreImage, Difficulty, ScorecardFormat, scoreFormat } from "./process-image";
+import { inlineCode } from "discord.js";
 import { AxiosError } from "axios";
 
 export interface Score {
@@ -59,14 +59,14 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
 
   sh_scorecard.extract(getSyncRegion(meta)).resize(SYNC_W, SYNC_H, { kernel: "nearest" })
 
-  let [jacket, scoreImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
+  const [jacket, rawImg, diff5Img, combo5Img, diff4Img, combo4Img] = [JACKET_REGION, SCORE_REGION, DIFF_REGION_V5, COMBO_REGION_V5, DIFF_REGION_V4, COMBO_REGION_V4]
     .map((region) => sh_scorecard.clone().extract(region).png())
 
   // jacket = sharp(await jacket.toBuffer()).resize(JACKET_RESOLUTION).ensureAlpha().png()
 
-  let composed: sharp.Sharp, colored;
+  let composed: sharp.Sharp, colored, scoreImg: sharp.Sharp;
   try {
-    ({ composed, colored, scoreImg } = await processScoreImage(scoreImg));
+    ({ composed, colored, scoreImg } = await processScoreImage(rawImg));
   } catch (e) {
     return {
       success: false,
@@ -78,13 +78,13 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   now = Date.now()
 
   const normalWorker = await createWorker("eng", OEM.TESSERACT_ONLY, {
-    // @ts-ignore
+    // @ts-expect-error load_system_dawg property in tesseract worker
     load_system_dawg: '0',
     load_freq_dawg: '0',
   })
 
   const uppercaseAlphaWorker = await createWorker("eng", OEM.TESSERACT_ONLY, {
-    // @ts-ignore
+    // @ts-expect-error load_system_dawg property in tesseract worker
     load_system_dawg: '0',
     load_freq_dawg: '0',
   })
@@ -95,9 +95,9 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
 
   const digitScheduler = createScheduler()
   const workerDigitN = 2;
-  await Promise.all(Array(workerDigitN).fill(0).map(async (_, i) => {
+  await Promise.all(Array(workerDigitN).fill(0).map(async () => {
     const worker = await createWorker("eng", OEM.TESSERACT_ONLY, {
-      // @ts-ignore
+      // @ts-expect-error load_system_dawg property in tesseract worker
       load_system_dawg: '0',
       load_freq_dawg: '0',
     })
@@ -132,7 +132,7 @@ export async function processScorecard(imgUrl: string): Promise<ScorecardProcess
   digitScheduler.terminate()
 
   console.log("OCR text: %ds", -(now - Date.now()) / 1000)
-  now = Date.now()
+  // now = Date.now()
 
   let difficulty: Difficulty, combo: number, version: ScorecardFormat
   if ((["PAST", "PRESENT", "FUTURE", "BEYOND", "ETERNAL"]).includes(diff5) && !Number.isNaN(+combo5) && scoreFormat.test(score)) {

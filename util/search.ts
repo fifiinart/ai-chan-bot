@@ -1,13 +1,13 @@
 import SimplDB from "simpl.db";
 import { CustomClient } from ".."
 import { SongData } from "./database";
-import { disconnect } from "process";
+// import type { FuseIndex } from "fuse.js" with { "resolution-mode": "import" };
+type FuseIndex<T> = import("fuse.js", { with: {"resolution-mode": "import"} }).FuseIndex<T>
 
-let index: any = undefined
+let index: FuseIndex<SimplDB.Readable<SongData>> | undefined = undefined
 
-export async function updateIndex(db: SimplDB.Database) {
+export async function updateIndex(db: SimplDB.Database, _songdata: SimplDB.Readable<SongData>[]) {
   const Fuse = (await import('fuse.js')).default;
-  const _songdata = db.getCollection<SongData>("songdata")!.getAll();
   return index = Fuse.createIndex(["id", ["difficulties", "name"]], _songdata);
 }
 
@@ -15,8 +15,11 @@ export type SongDataSearchType = 'name'
 
 export async function searchSongdata(client: CustomClient, type: SongDataSearchType, query: string) {
   const Fuse = (await import('fuse.js')).default;
-  const _songdata = client.db.getCollection<SongData>("songdata")!.getAll();
-  if (!index) updateIndex(client.db)
+  const _songdata = client.db.getCollection<SongData>("songdata")?.getAll();
+  if (!_songdata) {
+    throw new Error("No song data collection!")
+  }
+  if (!index) updateIndex(client.db, _songdata)
 
   if (type === 'name') {
     const result = new Fuse<SongData>(_songdata, {

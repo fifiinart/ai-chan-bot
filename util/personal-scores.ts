@@ -1,9 +1,8 @@
-import SimplDB, { Database } from "simpl.db"
+import { Database } from "simpl.db"
 import { ScoreAnalysis } from "./analyze-score"
 import { TotalDifficultyData } from "./pixelmatch"
 import { Difficulty } from "./process-image"
 import { Score } from "./process-scorecard"
-import { User } from "discord.js"
 
 export enum ClearType {
   Clear, FullRecall, PureMemory
